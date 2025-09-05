@@ -1,5 +1,5 @@
-import { HostNavigation } from './src/navigation/HostNavigation';
+import { HostNavigation } from "./src/navigation/HostNavigation";
 
 export default function App() {
-  return <HostNavigation />
+    return <HostNavigation />;
 }
