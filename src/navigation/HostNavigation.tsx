@@ -3,32 +3,15 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HomeScreen } from '../screens/home/HomeScreen';
 import { LoginScreen } from '../screens/login/LoginScreen';
 
-type HostNavigationProps = {
-    isLogged: boolean
-}
+const Stack = createNativeStackNavigator()
 
-export function HostNavigation({ isLogged }: HostNavigationProps) {
-    const Routes = isLogged ? ProtectedNavigator : PublicNavigator
+export function HostNavigation() {
+    const isLogged = true
 
     return <NavigationContainer>
-        <Routes />
+        <Stack.Navigator>
+            <Stack.Screen name='Login' component={LoginScreen} />
+            <Stack.Screen name='Home' component={HomeScreen} />
+        </Stack.Navigator>
     </NavigationContainer>
 }
-
-const PublicStack = createNativeStackNavigator({
-    initialRouteName: 'login',
-    screens: {
-        'login': LoginScreen
-    }
-})
-
-const PublicNavigator = createStaticNavigation(PublicStack)
-
-const ProtectedStack = createNativeStackNavigator({
-    initialRouteName: 'home',
-    screens: {
-        'home': HomeScreen
-    }
-})
-
-const ProtectedNavigator = createStaticNavigation(ProtectedStack)
