@@ -3,13 +3,14 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { HomeScreen } from "../screens/home/HomeScreen";
 import { LoginScreen } from "../screens/login/LoginScreen";
 import { createDrawerNavigator } from "@react-navigation/drawer";
+import { useAuthContext } from "../contexts/AuthContext";
 
 export function HostNavigation() {
-    const isLogged = true;
+    const auth = useAuthContext();
 
     return (
         <NavigationContainer>
-            {isLogged ? <ProtectedRoutes /> : <PublicRoutes />}
+            {auth?.isLogged ? <ProtectedRoutes /> : <PublicRoutes />}
         </NavigationContainer>
     );
 }
