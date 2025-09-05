@@ -1,4 +1,4 @@
-import { createStaticNavigation, NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HomeScreen } from '../screens/home/HomeScreen';
 import { LoginScreen } from '../screens/login/LoginScreen';
@@ -10,8 +10,15 @@ export function HostNavigation() {
 
     return <NavigationContainer>
         <Stack.Navigator>
-            <Stack.Screen name='Login' component={LoginScreen} />
-            <Stack.Screen name='Home' component={HomeScreen} />
+            {isLogged ? <ProtectedRoutes /> : <PublicRoutes />}
         </Stack.Navigator>
     </NavigationContainer>
+}
+
+function PublicRoutes() {
+    return <><Stack.Screen name='Login' component={LoginScreen} /></>
+}
+
+function ProtectedRoutes() {
+    return <><Stack.Screen name='Home' component={HomeScreen} /></>
 }
