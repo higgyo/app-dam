@@ -9,8 +9,7 @@ import {
     StyleSheet,
 } from "react-native";
 
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 
 const ChatScreen = () => {
     const [message, setMessage] = useState("");

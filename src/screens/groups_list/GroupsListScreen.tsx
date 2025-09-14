@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, FlatList } from "react-native";
 import { SearchInput } from "../../components/SearchInput";
 import { ChatBoard } from "../chat_list/components/ChatBoard";
+import { useNavigation } from "@react-navigation/native";
 
 const mockChats = [
     {
@@ -12,6 +13,8 @@ const mockChats = [
 ];
 
 export function GroupsListScreen() {
+    const navigate = useNavigation();
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Grupos de Localização</Text>
@@ -25,6 +28,9 @@ export function GroupsListScreen() {
                         title={item.title}
                         lastMessage={item.lastMessage}
                         unreadedMessages={item.unreadedMessages}
+                        onClick={() => {
+                            navigate.navigate("Conversation");
+                        }}
                     />
                 )}
             />

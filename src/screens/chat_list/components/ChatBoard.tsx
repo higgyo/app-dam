@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from "react-native";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { FontAwesome } from "@expo/vector-icons";
 
 interface ChatBoardProps {
     title: string;
