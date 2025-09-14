@@ -34,16 +34,15 @@ function PublicRoutes() {
 function ProtectedRoutes() {
     return (
         <Drawer.Navigator initialRouteName="ChatTabs">
-            <Drawer.Screen name="Home" component={ChatScreen} />
-            <Drawer.Screen
-                name="Conversation"
-                component={ChatScreen}
-                options={{ title: "Conversa" }}
-            />
             <Drawer.Screen
                 name="ChatTabs"
                 component={ChatBottomTabs}
                 options={{ title: "Conversas" }}
+            />
+            <Drawer.Screen
+                name="Conversation"
+                component={ChatScreen}
+                options={{ title: "Conversa" }}
             />
         </Drawer.Navigator>
     );
