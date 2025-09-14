@@ -6,6 +6,7 @@ import { createDrawerNavigator } from "@react-navigation/drawer";
 import { useAuthContext } from "../contexts/AuthContext";
 import { ChatListScreen } from "../screens/chat_list/ChatListScreen";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { GroupsListScreen } from "../screens/groups_list/GroupsListScreen";
 
 export function HostNavigation() {
     const auth = useAuthContext();
@@ -29,7 +30,6 @@ function PublicRoutes() {
     );
 }
 
-// Opção 1: Bottom Tab dentro do Drawer (Recomendado)
 function ProtectedRoutes() {
     return (
         <Drawer.Navigator initialRouteName="ChatTabs">
@@ -45,21 +45,19 @@ function ProtectedRoutes() {
 
 function ChatBottomTabs() {
     return (
-        <BottomTab.Navigator>
+        <BottomTab.Navigator screenOptions={{ headerShown: false }}>
             <BottomTab.Screen
                 name="Chats"
                 component={ChatListScreen}
                 options={{
                     tabBarLabel: "Chats",
-                    // Adicione ícones aqui se necessário
                 }}
             />
             <BottomTab.Screen
                 name="Groups"
-                component={ChatListScreen}
+                component={GroupsListScreen}
                 options={{
-                    tabBarLabel: "Grupos",
-                    // Adicione ícones aqui se necessário
+                    tabBarLabel: "Grupos de Localização",
                 }}
             />
         </BottomTab.Navigator>
