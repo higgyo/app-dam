@@ -7,6 +7,7 @@ import { useAuthContext } from "../contexts/AuthContext";
 import { ChatListScreen } from "../screens/chat_list/ChatListScreen";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { GroupsListScreen } from "../screens/groups_list/GroupsListScreen";
+import ChatScreen from "../screens/chat/ChatScreen";
 
 export function HostNavigation() {
     const auth = useAuthContext();
@@ -33,7 +34,12 @@ function PublicRoutes() {
 function ProtectedRoutes() {
     return (
         <Drawer.Navigator initialRouteName="ChatTabs">
-            <Drawer.Screen name="Home" component={HomeScreen} />
+            <Drawer.Screen name="Home" component={ChatScreen} />
+            <Drawer.Screen
+                name="Conversation"
+                component={ChatScreen}
+                options={{ title: "Conversa" }}
+            />
             <Drawer.Screen
                 name="ChatTabs"
                 component={ChatBottomTabs}

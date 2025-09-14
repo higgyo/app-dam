@@ -1,6 +1,7 @@
 import { View, Text, TextInput, StyleSheet, FlatList } from "react-native";
 import { SearchInput } from "../../components/SearchInput";
 import { ChatBoard } from "./components/ChatBoard";
+import { useNavigation } from "@react-navigation/native";
 
 const mockChats = [
     {
@@ -22,18 +23,24 @@ const mockChats = [
 ];
 
 export function ChatListScreen() {
+    const navigation = useNavigation();
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Chats</Text>
             <SearchInput style={styles.searchInput} placeholder="Search" />
             <FlatList
                 data={mockChats}
+                contentContainerStyle={styles.listContainer}
                 renderItem={({ item, index, separators }) => (
                     <ChatBoard
                         key={index}
                         title={item.title}
                         lastMessage={item.lastMessage}
                         unreadedMessages={item.unreadedMessages}
+                        onClick={() => {
+                            navigation.navigate("Conversation");
+                        }}
                     />
                 )}
             />
@@ -53,5 +60,8 @@ const styles = StyleSheet.create({
     },
     searchInput: {
         marginTop: 16,
+    },
+    listContainer: {
+        paddingVertical: 8,
     },
 });

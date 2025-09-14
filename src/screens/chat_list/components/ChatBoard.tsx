@@ -5,15 +5,17 @@ interface ChatBoardProps {
     title: string;
     lastMessage: string;
     unreadedMessages: number;
+    onClick: () => void;
 }
 
 export function ChatBoard({
     title,
     lastMessage,
     unreadedMessages,
+    onClick,
 }: ChatBoardProps) {
     return (
-        <View style={styles.container}>
+        <View style={styles.container} onTouchEnd={onClick}>
             <View style={styles.chatImageContainer}>
                 <FontAwesome name="user" size={24} color="#B4DBFF" />
             </View>

@@ -18,7 +18,7 @@ export function GroupsListScreen() {
             <SearchInput style={styles.searchInput} placeholder="Search" />
             <FlatList
                 data={mockChats}
-                pagingEnabled={true}
+                contentContainerStyle={styles.listContainer}
                 renderItem={({ item, index, separators }) => (
                     <ChatBoard
                         key={index}
@@ -44,5 +44,8 @@ const styles = StyleSheet.create({
     },
     searchInput: {
         marginTop: 16,
+    },
+    listContainer: {
+        paddingVertical: 8,
     },
 });
