@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
     KeyboardAvoidingView,
     Platform,
@@ -8,21 +8,41 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { AntDesign } from "@expo/vector-icons";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { useNavigation } from "@react-navigation/native";
 
 export function LoginScreen() {
+    const [email, setEmail] = useState<string>("");
+    const [password, setPassword] = useState<string>("");
+
+    const navigation = useNavigation();
+
+    const handleRedirect = () => {
+        navigation.navigate("Register");
+    };
+
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={styles.container}
         >
-            <View style={{ height: "30%" }}></View>
+            <View
+                style={{
+                    backgroundColor: "#4e9af1",
+                    height: "40%",
+                    borderBottomLeftRadius: 36,
+                    borderBottomRightRadius: 36,
+                }}
+            ></View>
             <View style={styles.contentContainer}>
-                <Text style={styles.headline}>Bem-Vindo!</Text>
+                <Text style={styles.headline}>Bem-vindo!</Text>
 
-                <TextInput style={styles.input} />
+                <TextInput
+                    placeholder="example@domain.com.br"
+                    style={styles.input}
+                />
 
-                <TextInput style={styles.input} />
+                <TextInput placeholder="********" style={styles.input} />
 
                 <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
 
@@ -32,7 +52,9 @@ export function LoginScreen() {
 
                 <View style={styles.signUpContainer}>
                     <Text>Não é um membro?</Text>
-                    <Text style={styles.signUpText}>Cadastre-se agora!</Text>
+                    <Text onPress={handleRedirect} style={styles.signUpText}>
+                        Cadastre-se agora!
+                    </Text>
                 </View>
 
                 <View style={styles.divider} />
@@ -40,18 +62,12 @@ export function LoginScreen() {
                 <Text>Ou continue com</Text>
 
                 <View style={styles.socialMediaContainer}>
-                    <AntDesign.Button
+                    <FontAwesome
                         backgroundColor="#ED3241"
                         name="google"
                         size={24}
                         color="white"
-                        style={{ marginRight: 0 }}
-                    />
-                    <AntDesign.Button
-                        backgroundColor="#1877F2"
-                        name="facebook-square"
-                        size={24}
-                        color="white"
+                        style={styles.buttonGoogle}
                     />
                 </View>
             </View>
@@ -76,6 +92,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#f0f0f0",
         borderRadius: 8,
         marginTop: 16,
+        paddingHorizontal: 16,
     },
     forgotPasswordText: {
         marginTop: 10,
@@ -114,7 +131,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     buttonGoogle: {
-        backgroundColor: "ED3241",
+        backgroundColor: "#ED3241",
+        borderRadius: 100,
+        width: 48,
+        height: 48,
+        textAlign: "center",
+        verticalAlign: "middle",
+        marginTop: 8,
     },
     headline: {
         fontSize: 28,

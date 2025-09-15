@@ -8,6 +8,7 @@ import { ChatListScreen } from "../screens/chat_list/ChatListScreen";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { GroupsListScreen } from "../screens/groups_list/GroupsListScreen";
 import ChatScreen from "../screens/chat/ChatScreen";
+import { RegisterScreen } from "../screens/register/RegisterScreen";
 
 export function HostNavigation() {
     const auth = useAuthContext();
@@ -26,7 +27,16 @@ const BottomTab = createBottomTabNavigator();
 function PublicRoutes() {
     return (
         <Stack.Navigator>
-            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen
+                name="Login"
+                component={LoginScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="Register"
+                component={RegisterScreen}
+                options={{ headerShown: false }}
+            />
         </Stack.Navigator>
     );
 }
