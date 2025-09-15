@@ -10,12 +10,19 @@ import {
 } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../../types/navigation";
+
+type RegisterScreenNavigationProp = NativeStackNavigationProp<
+    RootStackParamList,
+    "Login"
+>;
 
 export function LoginScreen() {
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
 
-    const navigation = useNavigation();
+    const navigation = useNavigation<RegisterScreenNavigationProp>();
 
     const handleRedirect = () => {
         navigation.navigate("Register");

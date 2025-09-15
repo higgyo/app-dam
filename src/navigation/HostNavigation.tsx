@@ -9,6 +9,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { GroupsListScreen } from "../screens/groups_list/GroupsListScreen";
 import ChatScreen from "../screens/chat/ChatScreen";
 import { RegisterScreen } from "../screens/register/RegisterScreen";
+import { RootStackParamList } from "../types/navigation";
 
 export function HostNavigation() {
     const auth = useAuthContext();
@@ -20,7 +21,7 @@ export function HostNavigation() {
     );
 }
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 const Drawer = createDrawerNavigator();
 const BottomTab = createBottomTabNavigator();
 
