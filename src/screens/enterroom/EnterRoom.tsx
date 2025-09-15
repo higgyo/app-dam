@@ -10,13 +10,11 @@ import {
 } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-export const CreateRoom = () => {
-    const [roomName, setRoomName] = useState<string>("");
+export const EnterRoom = () => {
+    const [roomCode, setRoomCode] = useState<string>("");
     const [password, setPassword] = useState<string>("");
-    const [confirmPassword, setConfirmPassword] = useState<string>("");
 
     const [showPassword, setShowPassword] = useState<boolean>(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
 
     return (
         <KeyboardAvoidingView
@@ -24,25 +22,25 @@ export const CreateRoom = () => {
             style={styles.container}
         >
             <View style={styles.contentContainer}>
-                <Text style={styles.header}>Nova Sala</Text>
+                <Text style={styles.header}>Entrar em uma Sala</Text>
 
                 <Text style={{ marginBottom: 16 }}>
-                    Crie uma sala de localização com nome e senha para compartilhar com seus amigos ou familiares!
+                    Nessa tela você vai conseguir entrar em uma sala de localizações! Basta inserir o código da sala gerado no momento da criação e sua senha.
                 </Text>
 
-                <Text style={styles.labelText}>Nome</Text>
+                <Text style={styles.labelText}>Código da Sala</Text>
                 <TextInput
-                    onChangeText={roomName => setRoomName(roomName)}
-                    placeholder="Nome da sala"
+                    onChangeText={roomCode => setRoomCode(roomCode)}
+                    placeholder="Código da sala"
                     style={styles.input}
-                    value={roomName}
+                    value={roomCode}
                 />
 
                 <Text style={styles.labelText}>Senha</Text>
                 <View style={styles.inputContainer}>
                     <TextInput
                         onChangeText={password => setPassword(password)}
-                        placeholder="Crie uma senha"
+                        placeholder="********"
                         style={styles.inputWithIcon}
                         value={password}
                         secureTextEntry={!showPassword}
@@ -56,26 +54,8 @@ export const CreateRoom = () => {
                     </TouchableOpacity>
                 </View>
 
-                <Text style={styles.labelText}>Confirme a senha</Text>
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        onChangeText={confirmPassword => setConfirmPassword(confirmPassword)}
-                        placeholder="Confirme a senha"
-                        style={styles.inputWithIcon}
-                        value={confirmPassword}
-                        secureTextEntry={!showConfirmPassword}
-                    />
-                    <TouchableOpacity onPress={() => setShowConfirmPassword(prev => !prev)}>
-                        <Ionicons
-                            name={showConfirmPassword ? "eye-off" : "eye"}
-                            size={24}
-                            color="gray"
-                        />
-                    </TouchableOpacity>
-                </View>
-
                 <TouchableOpacity style={styles.saveButton}>
-                    <Text style={styles.saveButtonText}>Salvar</Text>
+                    <Text style={styles.saveButtonText}>Entrar</Text>
                 </TouchableOpacity>
             </View>
         </KeyboardAvoidingView>
