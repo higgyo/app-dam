@@ -10,6 +10,8 @@ import { GroupsListScreen } from "../screens/groups_list/GroupsListScreen";
 import ChatScreen from "../screens/chat/ChatScreen";
 import { RegisterScreen } from "../screens/register/RegisterScreen";
 import { RootStackParamList } from "../types/navigation";
+import { CreateRoom } from "../screens/createroom/CreateRoom";
+import { EnterRoom } from "../screens/enterroom/EnterRoom";
 
 export function HostNavigation() {
     const auth = useAuthContext();
@@ -54,6 +56,16 @@ function ProtectedRoutes() {
                 name="Conversation"
                 component={ChatScreen}
                 options={{ title: "Conversa" }}
+            />
+            <Drawer.Screen
+                name="CreateRoom"
+                component={CreateRoom}
+                options={{ title: "Criar Sala" }}
+            />
+            <Drawer.Screen
+                name="EnterRoom"
+                component={EnterRoom}
+                options={{ title: "Adentrar Sala" }}
             />
         </Drawer.Navigator>
     );

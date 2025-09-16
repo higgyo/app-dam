@@ -3,10 +3,15 @@ import { createContext, ReactNode, useContext, useState } from "react";
 export function AuthContextProvider({ children }: { children: ReactNode }) {
     const [isLogged, setIsLogged] = useState(false);
 
+    function login() {
+        setIsLogged(true)
+    }
+
     return (
         <AuthContext
             value={{
                 isLogged,
+                login
             }}
         >
             {children}
