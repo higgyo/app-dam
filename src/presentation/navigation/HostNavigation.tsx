@@ -9,9 +9,9 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { GroupsListScreen } from "../screens/groups_list/GroupsListScreen";
 import ChatScreen from "../screens/chat/ChatScreen";
 import { RegisterScreen } from "../screens/register/RegisterScreen";
-import { RootStackParamList } from "../types/navigation";
 import { CreateRoom } from "../screens/createroom/CreateRoom";
 import { EnterRoom } from "../screens/enterroom/EnterRoom";
+import { RootStackParamList } from "./types";
 
 export function HostNavigation() {
     const auth = useAuthContext();
