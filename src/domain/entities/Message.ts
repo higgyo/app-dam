@@ -3,15 +3,17 @@ export default class Message {
         readonly message: string,
         readonly date: string,
         readonly userId: string,
-        readonly id?: string,
+        readonly chatId: string,
+        readonly id?: string
     ) {}
 
-    static create(message: string, date: string, userId: string, id?: string) {
-        return new Message(
-            message,
-            date,
-            userId,
-            id
-        )
+    static create(
+        message: string,
+        date: string,
+        userId: string,
+        chatId: string,
+        id?: string
+    ) {
+        return new Message(message, date, userId, chatId, id);
     }
 }
