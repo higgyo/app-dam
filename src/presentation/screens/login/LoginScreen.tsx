@@ -11,8 +11,8 @@ import {
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../types/navigation";
 import { useAuthContext } from "../../contexts/AuthContext";
+import { RootStackParamList } from "../../navigation/types";
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<
     RootStackParamList,
@@ -25,7 +25,7 @@ export function LoginScreen() {
 
     const navigation = useNavigation<RegisterScreenNavigationProp>();
 
-    const auth = useAuthContext()
+    const auth = useAuthContext();
 
     const handleRedirect = () => {
         navigation.navigate("Register");
@@ -56,9 +56,12 @@ export function LoginScreen() {
 
                 <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
 
-                <TouchableOpacity style={styles.button} onPress={() => {
-                    auth.login()
-                }}>
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={() => {
+                        auth?.login();
+                    }}
+                >
                     <Text style={styles.buttonText}>Login</Text>
                 </TouchableOpacity>
 

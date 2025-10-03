@@ -4,14 +4,14 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
     const [isLogged, setIsLogged] = useState(false);
 
     function login() {
-        setIsLogged(true)
+        setIsLogged(true);
     }
 
     return (
         <AuthContext
             value={{
                 isLogged,
-                login
+                login,
             }}
         >
             {children}
@@ -27,4 +27,5 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 type AuthContextType = {
     isLogged: boolean;
+    login: () => void;
 };
