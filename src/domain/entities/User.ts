@@ -6,25 +6,25 @@ export default class User {
     private constructor(
         readonly name: string,
         readonly location: GeoLocation,
-        readonly id?: string,
-        readonly email?: Email,
-        readonly password?: Password
+        readonly email: Email,
+        readonly password: Password,
+        readonly id?: string
     ) {}
 
     static create(
         name: string,
         latitude: number,
         longitude: number,
-        id?: string,
-        email?: string,
-        password?: string
+        email: string,
+        password: string,
+        id?: string
     ) {
         return new User(
             name,
             GeoLocation.create(latitude, longitude),
-            id,
-            email ? Email.create(email) : undefined,
-            password ? Password.create(password) : undefined
+            Email.create(email),
+            Password.create(password),
+            id?.length ? id : crypto.randomUUID(),
         );
     }
 }
