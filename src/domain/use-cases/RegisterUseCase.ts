@@ -8,8 +8,8 @@ export class RegisterUserUseCase {
     name: string;
     email: string;
     password: string;
-    latitude: number;
-    longitude: number;
+    latitude?: number;
+    longitude?: number;
   }): Promise<User> {
     const { name, email, password, latitude, longitude } = params;
 
@@ -24,7 +24,14 @@ export class RegisterUserUseCase {
 
     const hashedPassword = await this.hashPassword(password);
 
-    const user = User.create(name, latitude, longitude, email, hashedPassword, crypto.randomUUID());
+    const user = User.create({ 
+      name, 
+      latitude, 
+      longitude, 
+      email, 
+      password: hashedPassword, 
+      id: window.crypto.randomUUID() 
+    });
 
     await this.userRepository.save(user);
 

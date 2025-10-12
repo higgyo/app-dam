@@ -1,13 +1,13 @@
 import User from "../domain/entities/User";
 
 export class FakeDatabase {
-    private instance: FakeDatabase | null = null;
+    private static instance: FakeDatabase | null = null;
 
     public users: User[] = [];
 
     private constructor() {}
 
-    getInstance() {
+    static getInstance() {
         if (this.instance === null) {
             this.instance = new FakeDatabase();
         }

@@ -5,26 +5,36 @@ import Password from "../value-objects/Password";
 export default class User {
     private constructor(
         readonly name: string,
-        readonly location: GeoLocation,
         readonly email: Email,
         readonly password: Password,
+        readonly location?: GeoLocation,
         readonly id?: string
     ) {}
 
-    static create(
-        name: string,
-        latitude: number,
-        longitude: number,
-        email: string,
-        password: string,
-        id?: string
-    ) {
+    static create(user: {
+        name: string;
+        email: string;
+        password: string;
+        latitude?: number;
+        longitude?: number;
+        id?: string;
+    }) {
+        if (user.latitude && user.longitude) {
+            return new User(
+                user.name,
+                Email.create(user.email),
+                Password.create(user.password),
+                GeoLocation.create(user.latitude, user.longitude),
+                user.id?.length ? user.id : window.crypto.randomUUID()
+            );
+        }
+
         return new User(
-            name,
-            GeoLocation.create(latitude, longitude),
-            Email.create(email),
-            Password.create(password),
-            id?.length ? id : crypto.randomUUID(),
+            user.name,
+            Email.create(user.email),
+            Password.create(user.password),
+            undefined,
+            user.id?.length ? user.id : window.crypto.randomUUID()
         );
     }
 }

@@ -22,6 +22,7 @@ type RegisterScreenNavigationProp = NativeStackNavigationProp<
 export function LoginScreen() {
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
+    const [error, setError] = useState<string>("");
 
     const navigation = useNavigation<RegisterScreenNavigationProp>();
 
@@ -29,6 +30,16 @@ export function LoginScreen() {
 
     const handleRedirect = () => {
         navigation.navigate("Register");
+    };
+
+    const handleLogin = async () => {
+        try {
+            setError("");
+            await auth.login(email, password);
+            // Login bem-sucedido - navegação será tratada pelo HostNavigation
+        } catch (err: any) {
+            setError(err.message || "Erro ao fazer login");
+        }
     };
 
     return (
@@ -50,17 +61,27 @@ export function LoginScreen() {
                 <TextInput
                     placeholder="example@domain.com.br"
                     style={styles.input}
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
                 />
 
-                <TextInput placeholder="********" style={styles.input} />
+                <TextInput 
+                    placeholder="********" 
+                    style={styles.input}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                />
+
+                {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                 <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
 
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() => {
-                        auth?.login();
-                    }}
+                    onPress={handleLogin}
                 >
                     <Text style={styles.buttonText}>Login</Text>
                 </TouchableOpacity>
@@ -157,5 +178,10 @@ const styles = StyleSheet.create({
     headline: {
         fontSize: 28,
         fontWeight: "bold",
+    },
+    errorText: {
+        color: "red",
+        marginTop: 10,
+        fontSize: 14,
     },
 });
