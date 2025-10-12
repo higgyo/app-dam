@@ -2,6 +2,7 @@
 module.exports = {
     preset: "ts-jest",
     testEnvironment: "node",
+    setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
     coveragePathIgnorePatterns: [
         "/node_modules/",
         "/__tests__/setup.js",
