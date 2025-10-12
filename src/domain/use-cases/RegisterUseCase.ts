@@ -1,5 +1,6 @@
 import User from "../entities/User";
 import { IUserRepository } from "../interfaces/iuser-repository";
+import * as Crypto from "expo-crypto"
 
 export class RegisterUserUseCase {
   constructor(private readonly userRepository: IUserRepository) {}
@@ -30,7 +31,7 @@ export class RegisterUserUseCase {
       longitude, 
       email, 
       password: hashedPassword, 
-      id: window.crypto.randomUUID() 
+      id: Crypto.randomUUID() 
     });
 
     await this.userRepository.save(user);

@@ -1,6 +1,7 @@
 import Email from "../value-objects/Email";
 import GeoLocation from "../value-objects/GeoLocation";
 import Password from "../value-objects/Password";
+import * as Crypto from "expo-crypto"
 
 export default class User {
     private constructor(
@@ -25,7 +26,7 @@ export default class User {
                 Email.create(user.email),
                 Password.create(user.password),
                 GeoLocation.create(user.latitude, user.longitude),
-                user.id?.length ? user.id : window.crypto.randomUUID()
+                user.id?.length ? user.id : Crypto.randomUUID()
             );
         }
 
@@ -34,7 +35,7 @@ export default class User {
             Email.create(user.email),
             Password.create(user.password),
             undefined,
-            user.id?.length ? user.id : window.crypto.randomUUID()
+            user.id?.length ? user.id : Crypto.randomUUID()
         );
     }
 }
