@@ -1,5 +1,5 @@
-import { ContextWrapper } from "./src/contexts/ContextWrapper";
-import { HostNavigation } from "./src/navigation/HostNavigation";
+import { ContextWrapper } from "./src/presentation/contexts/ContextWrapper";
+import { HostNavigation } from "./src/presentation/navigation/HostNavigation";
 
 export default function App() {
     return (

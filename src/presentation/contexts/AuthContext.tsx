@@ -1,0 +1,142 @@
+import { createContext, ReactNode, useContext, useState } from "react";
+import User from "../../domain/entities/User";
+import { LoginUser } from "../../application/use-cases/LoginUseCase";
+import { RegisterUserUseCase } from "../../application/use-cases/RegisterUseCase";
+import { UpdateUserUseCase } from "../../application/use-cases/UpdateUserUseCase";
+import { DeleteUserUseCase } from "../../application/use-cases/DeleteUserUseCase";
+import { FindUserUseCase } from "../../application/use-cases/FindUserUseCase";
+import { MockUserRepository } from "../../infrastructure/repositories/mock-user-repository";
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthContextProvider({ children }: { children: ReactNode }) {
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [isLogged, setIsLogged] = useState(false);
+
+    // Inicializar repositório e use cases
+    const userRepository = new MockUserRepository();
+    const loginUseCase = new LoginUser(userRepository);
+    const registerUseCase = new RegisterUserUseCase(userRepository);
+    const updateUserUseCase = new UpdateUserUseCase(userRepository);
+    const deleteUserUseCase = new DeleteUserUseCase(userRepository);
+    const findUserUseCase = new FindUserUseCase(userRepository);
+
+    async function login(email: string, password: string): Promise<void> {
+        try {
+            const user = await loginUseCase.execute({ email, password });
+            setCurrentUser(user);
+            setIsLogged(true);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async function register(params: {
+        name: string;
+        email: string;
+        password: string;
+        latitude?: number;
+        longitude?: number;
+    }): Promise<User> {
+        try {
+            const user = await registerUseCase.execute(params);
+            return user;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async function updateUser(params: {
+        id: string;
+        name?: string;
+        email?: string;
+        password?: string;
+        latitude?: number;
+        longitude?: number;
+    }): Promise<User> {
+        try {
+            const user = await updateUserUseCase.execute(params);
+            if (currentUser && currentUser.id === user.id) {
+                setCurrentUser(user);
+            }
+            return user;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async function deleteUser(id: string): Promise<void> {
+        try {
+            await deleteUserUseCase.execute({ id });
+            if (currentUser && currentUser.id === id) {
+                logout();
+            }
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async function findUser(id: string): Promise<User | null> {
+        try {
+            return await findUserUseCase.execute({ id });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    function logout() {
+        setCurrentUser(null);
+        setIsLogged(false);
+    }
+
+    return (
+        <AuthContext.Provider
+            value={{
+                currentUser,
+                isLogged,
+                login,
+                register,
+                updateUser,
+                deleteUser,
+                findUser,
+                logout,
+            }}
+        >
+            {children}
+        </AuthContext.Provider>
+    );
+}
+
+export function useAuthContext() {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error(
+            "useAuthContext must be used within AuthContextProvider"
+        );
+    }
+    return context;
+}
+
+type AuthContextType = {
+    currentUser: User | null;
+    isLogged: boolean;
+    login: (email: string, password: string) => Promise<void>;
+    register: (params: {
+        name: string;
+        email: string;
+        password: string;
+        latitude?: number;
+        longitude?: number;
+    }) => Promise<User>;
+    updateUser: (params: {
+        id: string;
+        name?: string;
+        email?: string;
+        password?: string;
+        latitude?: number;
+        longitude?: number;
+    }) => Promise<User>;
+    deleteUser: (id: string) => Promise<void>;
+    findUser: (id: string) => Promise<User | null>;
+    logout: () => void;
+};

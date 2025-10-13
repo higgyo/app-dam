@@ -1,30 +1,51 @@
 {
-    "name": "Expo React Native",
-    "dockerFile": "./Dockerfile",
-    "context": "..",
-    "workspaceFolder": "/home/node/app",
+    "name": "Expo React Native Dev",
+    "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bullseye",
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "msjsdiag.vscode-react-native",
+                "styled-components.vscode-styled-components"
+            ],
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash"
+            }
+        }
+    },
+    "mounts": [
+        "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+    ],
+    "workspaceFolder": "/workspace",
+    "postCreateCommand": "npm install -g expo-cli eas-cli && npm install",
     "forwardPorts": [
         19000,
         19001,
         19002,
         8081
     ],
-    "appPort": 8081,
-    "remoteUser": "node",
-    "postCreateCommand": "npm install",
-    "customizations": {
-        "vscode": {
-            "extensions": [
-                "dbaeumer.vscode-eslint",
-                "esbenp.prettier-vscode",
-                "ms-vscode.vscode-react-native"
-            ]
+    "portsAttributes": {
+        "19000": {
+            "label": "Expo Dev Server",
+            "onAutoForward": "notify"
+        },
+        "19001": {
+            "label": "Expo Dev Tools",
+            "onAutoForward": "notify"
+        },
+        "19002": {
+            "label": "Expo Metro Bundler",
+            "onAutoForward": "notify"
+        },
+        "8081": {
+            "label": "Metro Bundler",
+            "onAutoForward": "notify"
         }
     },
-    "runArgs": [
-        "-it",
-        "--rm"
-    ],
-    "overrideCommand": false
-
+    "remoteUser": "node"
 }
