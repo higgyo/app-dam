@@ -1,10 +1,10 @@
 import { createContext, ReactNode, useContext, useState } from "react";
 import User from "../../domain/entities/User";
-import { LoginUser } from "../../domain/use-cases/LoginUseCase";
-import { RegisterUserUseCase } from "../../domain/use-cases/RegisterUseCase";
-import { UpdateUserUseCase } from "../../domain/use-cases/UpdateUserUseCase";
-import { DeleteUserUseCase } from "../../domain/use-cases/DeleteUserUseCase";
-import { FindUserUseCase } from "../../domain/use-cases/FindUserUseCase";
+import { LoginUser } from "../../application/use-cases/LoginUseCase";
+import { RegisterUserUseCase } from "../../application/use-cases/RegisterUseCase";
+import { UpdateUserUseCase } from "../../application/use-cases/UpdateUserUseCase";
+import { DeleteUserUseCase } from "../../application/use-cases/DeleteUserUseCase";
+import { FindUserUseCase } from "../../application/use-cases/FindUserUseCase";
 import { MockUserRepository } from "../../infrastructure/repositories/mock-user-repository";
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -110,7 +110,9 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
 export function useAuthContext() {
     const context = useContext(AuthContext);
     if (!context) {
-        throw new Error('useAuthContext must be used within AuthContextProvider');
+        throw new Error(
+            "useAuthContext must be used within AuthContextProvider"
+        );
     }
     return context;
 }
