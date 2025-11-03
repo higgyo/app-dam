@@ -24,6 +24,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permitir BóConecta acessar sua câmera",
+          "microphonePermission": "Permitir BóConecta acessar seu microfone",
+          "recordAudioAndroid": true
+        }
+      ]
+    ]
   }
 }
