@@ -6,6 +6,8 @@ import { UpdateUserUseCase } from "../../application/use-cases/UpdateUserUseCase
 import { DeleteUserUseCase } from "../../application/use-cases/DeleteUserUseCase";
 import { FindUserUseCase } from "../../application/use-cases/FindUserUseCase";
 import { MockUserRepository } from "../../infrastructure/repositories/mock-user-repository";
+import { UserRepository } from "../../infrastructure/repositories/user-repository";
+import { AxiosHttpClient } from "../../infrastructure/http/axios-http-client";
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -13,8 +15,10 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLogged, setIsLogged] = useState(false);
 
+    const httpClient = new AxiosHttpClient()
+
     // Inicializar repositório e use cases
-    const userRepository = new MockUserRepository();
+    const userRepository = new UserRepository(httpClient);
     const loginUseCase = new LoginUser(userRepository);
     const registerUseCase = new RegisterUserUseCase(userRepository);
     const updateUserUseCase = new UpdateUserUseCase(userRepository);

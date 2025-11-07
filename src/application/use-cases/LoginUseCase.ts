@@ -1,5 +1,7 @@
 import User from "../../domain/entities/User";
 import { IUserRepository } from "../../domain/interfaces/iuser-repository";
+import Email from "../../domain/value-objects/Email";
+import Password from "../../domain/value-objects/Password";
 
 export class LoginUser {
     constructor(private readonly userRepository: IUserRepository) {}
@@ -7,20 +9,9 @@ export class LoginUser {
     async execute(params: { email: string; password: string }): Promise<User> {
         const { email, password } = params;
 
-        const user = await this.userRepository.findByEmail(email);
+        const user = await this.userRepository.login(Email.create(email), Password.create(password));
 
-        if (!user) {
-            throw new Error("Credenciais inválidas");
-        }
-
-        const isPasswordValid = await this.comparePassword(
-            password,
-            user.password ? user.password.value : ""
-        );
-
-        if (!isPasswordValid) {
-            throw new Error("Credenciais inválidas");
-        }
+        if (!user) throw new Error(`Falha ao fazer login`)
 
         return user;
     }

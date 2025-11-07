@@ -3,12 +3,20 @@ import { IUserRepository } from "../../domain/interfaces/iuser-repository";
 import Email from "../../domain/value-objects/Email";
 import Password from "../../domain/value-objects/Password";
 import { IHttpClient } from "../interfaces/ihttp-client";
+import { supabase } from "../supabase";
 
 export class UserRepository implements IUserRepository {
     constructor(readonly httpClient: IHttpClient) {}
 
     async login(email: Email, password: Password): Promise<User | null> {
-        return User.create("João", 100, 100);
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: email.value,
+            password: password.value,
+        });
+
+        if (error) throw new Error(`Falha ao fazer login: ${error.message}`)
+        
+        return User.create({ id: data.user.id, name: "macaco", email: email.value, password: password.value})
     }
 
     async register(
@@ -16,7 +24,19 @@ export class UserRepository implements IUserRepository {
         email: Email,
         password: Password
     ): Promise<User> {
-        return User.create("João", 100, 100);
+        const { data, error } = await supabase.auth.signUp({
+            email: email.value,
+            password: password.value,
+            options: {
+                data: {
+                    name: username
+                }
+            }
+        });
+
+        if (error) throw new Error(`Falha ao registrar usuário: ${error.message}`);
+        
+        return User.create({name: username, email: email.value, password: password.value})
     }
 
     async logout(): Promise<void> {}
