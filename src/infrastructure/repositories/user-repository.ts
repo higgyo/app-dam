@@ -14,9 +14,14 @@ export class UserRepository implements IUserRepository {
             password: password.value,
         });
 
-        if (error) throw new Error(`Falha ao fazer login: ${error.message}`)
-        
-        return User.create({ id: data.user.id, name: "macaco", email: email.value, password: password.value})
+        if (error) throw new Error(`Falha ao fazer login: ${error.message}`);
+
+        return User.create({
+            id: data.user.id,
+            name: data.user.user_metadata?.name,
+            email: email.value,
+            password: password.value,
+        });
     }
 
     async register(
@@ -29,14 +34,19 @@ export class UserRepository implements IUserRepository {
             password: password.value,
             options: {
                 data: {
-                    name: username
-                }
-            }
+                    name: username,
+                },
+            },
         });
 
-        if (error) throw new Error(`Falha ao registrar usuário: ${error.message}`);
-        
-        return User.create({name: username, email: email.value, password: password.value})
+        if (error)
+            throw new Error(`Falha ao registrar usuário: ${error.message}`);
+
+        return User.create({
+            name: username,
+            email: email.value,
+            password: password.value,
+        });
     }
 
     async logout(): Promise<void> {}
