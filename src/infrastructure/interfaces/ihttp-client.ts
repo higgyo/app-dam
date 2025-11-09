@@ -1,6 +1,8 @@
 export type Options = {
     headers?: Record<string, string>,
-    params?: Record<string, any>
+    params?: Record<string, any>,
+    timeout?: number;
+    responseType?: XMLHttpRequestResponseType;
 }
 
 export interface IHttpClient {

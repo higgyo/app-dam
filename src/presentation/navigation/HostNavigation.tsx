@@ -50,7 +50,7 @@ function ProtectedRoutes() {
         <Drawer.Navigator initialRouteName="ChatTabs">
             <Drawer.Screen
                 name="ChatTabs"
-                component={ChatBottomTabs}
+                component={GroupsListScreen}
                 options={{ title: "Conversas" }}
             />
             <Drawer.Screen

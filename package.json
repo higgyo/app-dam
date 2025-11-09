@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "start": "expo start -c",
+    "start": "expo start --tunnel",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
@@ -18,6 +18,8 @@
     "@react-navigation/elements": "^2.6.4",
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/native-stack": "^7.3.26",
+    "@supabase/supabase-js": "^2.80.0",
+    "axios": "^1.13.2",
     "expo": "^54.0.3",
     "expo-camera": "~17.0.8",
     "expo-crypto": "~15.0.7",
@@ -30,6 +32,7 @@
     "react-native-reanimated": "~4.1.0",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
+    "react-native-url-polyfill": "^3.0.0",
     "react-native-worklets": "0.5.1"
   },
   "devDependencies": {
