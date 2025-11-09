@@ -9,7 +9,10 @@ import {
     StyleSheet,
     ActivityIndicator,
     Alert,
+    Platform,
+    Keyboard,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { useAuthContext } from "../../contexts/AuthContext";
@@ -26,11 +29,13 @@ const ChatScreen = () => {
     const navigation = useNavigation();
     const { currentUser } = useAuthContext();
     const scrollViewRef = useRef<ScrollView>(null);
+    const insets = useSafeAreaInsets();
 
     const [message, setMessage] = useState("");
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
 
     const roomId = route.params?.roomId;
     const roomName = route.params?.roomName || "Chat";
@@ -59,8 +64,28 @@ const ChatScreen = () => {
             }
         );
 
+        // Keyboard listeners
+        const keyboardWillShow = Keyboard.addListener(
+            Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+            (e) => {
+                setKeyboardHeight(e.endCoordinates.height);
+                setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 100);
+            }
+        );
+
+        const keyboardWillHide = Keyboard.addListener(
+            Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+            () => {
+                setKeyboardHeight(0);
+            }
+        );
+
         return () => {
             unsubscribe();
+            keyboardWillShow.remove();
+            keyboardWillHide.remove();
         };
     }, [roomId]);
 
@@ -141,10 +166,19 @@ const ChatScreen = () => {
             <ScrollView
                 ref={scrollViewRef}
                 style={styles.messagesContainer}
-                contentContainerStyle={styles.messagesContent}
+                contentContainerStyle={[
+                    styles.messagesContent,
+                    {
+                        paddingBottom:
+                            keyboardHeight > 0
+                                ? keyboardHeight - insets.bottom
+                                : 16,
+                    },
+                ]}
                 onContentSizeChange={() =>
                     scrollViewRef.current?.scrollToEnd({ animated: true })
                 }
+                keyboardShouldPersistTaps="handled"
             >
                 {messages.length === 0 ? (
                     <View style={styles.emptyContainer}>
@@ -189,7 +223,23 @@ const ChatScreen = () => {
                 )}
             </ScrollView>
 
-            <View style={styles.inputContainer}>
+            <View
+                style={[
+                    styles.inputContainer,
+                    keyboardHeight > 0 && {
+                        position: "absolute",
+                        bottom: keyboardHeight - insets.bottom,
+                        left: 0,
+                        right: 0,
+                    },
+                    {
+                        paddingBottom:
+                            keyboardHeight > 0
+                                ? 12
+                                : Math.max(insets.bottom, 8),
+                    },
+                ]}
+            >
                 <TouchableOpacity style={styles.plusButton}>
                     <FontAwesome name="plus" size={24} color="#007AFF" />
                 </TouchableOpacity>
@@ -204,6 +254,8 @@ const ChatScreen = () => {
                         multiline={false}
                         onSubmitEditing={sendMessage}
                         editable={!sending}
+                        returnKeyType="send"
+                        blurOnSubmit={false}
                     />
                 </View>
 
@@ -228,9 +280,16 @@ const ChatScreen = () => {
 };
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: "#f0f0f0",
+    },
     container: {
         flex: 1,
         backgroundColor: "#f0f0f0",
+    },
+    flex: {
+        flex: 1,
     },
     centerContent: {
         justifyContent: "center",
