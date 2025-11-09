@@ -56,8 +56,12 @@ export class UserRepository implements IUserRepository {
                 },
             });
 
-            if (error)
-                throw new Error(`Falha ao registrar usuário: ${error.message}`);
+            if (error) {
+                const errorBody = await error.context.json();
+                throw new Error(
+                    `Falha ao registrar usuário: ${errorBody.error}`
+                );
+            }
 
             return User.create({
                 name: username,

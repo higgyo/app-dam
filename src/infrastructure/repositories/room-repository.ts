@@ -15,12 +15,15 @@ export class RoomRepository implements IRoomRepository {
                 {
                     body: {
                         name: name,
-                        password: password,
+                        password: password.value,
                     },
                 }
             );
 
-            if (error) throw new Error(`Falha ao criar sala: ${error.message}`);
+            if (error) {
+                const errorBody = await error.context.json();
+                throw new Error(`Falha ao criar sala: ${errorBody.error}`);
+            }
 
             return Room.create({ name, code: data.code });
         } catch (error) {
@@ -53,8 +56,10 @@ export class RoomRepository implements IRoomRepository {
                 }
             );
 
-            if (error)
-                throw new Error(`Falha ao entrar na sala: ${error.message}`);
+            if (error) {
+                const errorBody = await error.context.json();
+                throw new Error(`Falha ao entrar na sala: ${errorBody.error}`);
+            }
 
             return Room.create({
                 id: data.id,
