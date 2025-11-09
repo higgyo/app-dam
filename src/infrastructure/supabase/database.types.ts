@@ -143,7 +143,7 @@ export type Database = {
           password: string
         }
         Insert: {
-          code?: string
+          code: string
           created_at?: string
           created_by?: string
           id?: string
