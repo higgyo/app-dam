@@ -12,6 +12,7 @@ import { RegisterScreen } from "../screens/register/RegisterScreen";
 import { CreateRoom } from "../screens/createroom/CreateRoom";
 import { EnterRoom } from "../screens/enterroom/EnterRoom";
 import { RootStackParamList } from "./types";
+import { ChatCamera } from "../screens/chat_camera/ChatCamera";
 
 export function HostNavigation() {
     const auth = useAuthContext();
@@ -66,6 +67,11 @@ function ProtectedRoutes() {
                 name="EnterRoom"
                 component={EnterRoom}
                 options={{ title: "Adentrar Sala" }}
+            />
+            <Drawer.Screen 
+                name="Camera"
+                component={ChatCamera}
+                options={{ title: "Usar Câmera" }}
             />
         </Drawer.Navigator>
     );
