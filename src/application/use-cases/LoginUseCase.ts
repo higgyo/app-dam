@@ -9,9 +9,10 @@ export class LoginUser {
     async execute(params: { email: string; password: string }): Promise<User> {
         const { email, password } = params;
 
-        const user = await this.userRepository.login(Email.create(email), Password.create(password));
-
-        if (!user) throw new Error(`Falha ao fazer login`)
+        const user = await this.userRepository.login(
+            Email.create(email),
+            Password.create(password)
+        );
 
         return user;
     }

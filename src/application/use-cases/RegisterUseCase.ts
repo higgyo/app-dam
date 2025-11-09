@@ -16,7 +16,11 @@ export class RegisterUserUseCase {
     }): Promise<User> {
         const { name, email, password, latitude, longitude } = params;
 
-        return this.userRepository.register(name, Email.create(email), Password.create(password))
+        return this.userRepository.register(
+            name,
+            Email.create(email),
+            Password.create(password)
+        );
     }
 
     private async hashPassword(password: string): Promise<string> {

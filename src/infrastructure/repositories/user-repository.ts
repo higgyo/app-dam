@@ -8,20 +8,38 @@ import { supabase } from "../supabase";
 export class UserRepository implements IUserRepository {
     constructor(readonly httpClient: IHttpClient) {}
 
-    async login(email: Email, password: Password): Promise<User | null> {
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: email.value,
-            password: password.value,
-        });
+    async login(email: Email, password: Password): Promise<User> {
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email.value,
+                password: password.value,
+            });
 
-        if (error) throw new Error(`Falha ao fazer login: ${error.message}`);
+            if (error)
+                throw new Error(`Falha ao fazer login: ${error.message}`);
 
-        return User.create({
-            id: data.user.id,
-            name: data.user.user_metadata?.name,
-            email: email.value,
-            password: password.value,
-        });
+            const userId = data.user.id;
+
+            const { data: profile, error: profileError } = await supabase
+                .from("profiles")
+                .select("name")
+                .eq("user_id", userId)
+                .single();
+
+            if (profileError)
+                throw new Error(
+                    `Falha ao fazer login: ${profileError.message}`
+                );
+
+            return User.create({
+                id: data.user.id,
+                name: profile.name,
+                email: email.value,
+                password: password.value,
+            });
+        } catch (error) {
+            throw error;
+        }
     }
 
     async register(
@@ -29,41 +47,40 @@ export class UserRepository implements IUserRepository {
         email: Email,
         password: Password
     ): Promise<User> {
-        const { data, error } = await supabase.auth.signUp({
-            email: email.value,
-            password: password.value,
-            options: {
-                data: {
+        try {
+            const { error } = await supabase.functions.invoke("register-user", {
+                body: {
                     name: username,
+                    email: email.value,
+                    password: password.value,
                 },
-            },
-        });
+            });
 
-        if (error)
-            throw new Error(`Falha ao registrar usuário: ${error.message}`);
+            if (error)
+                throw new Error(`Falha ao registrar usuário: ${error.message}`);
 
-        return User.create({
-            name: username,
-            email: email.value,
-            password: password.value,
-        });
+            return User.create({
+                name: username,
+                email: email.value,
+                password: password.value,
+            });
+        } catch (error) {
+            throw error;
+        }
     }
 
-    async logout(): Promise<void> {}
+    async logout(): Promise<void> {
+        try {
+            const { error } = await supabase.auth.signOut();
 
-    delete(id: string): Promise<void> {
-        throw new Error("Method not implemented.");
+            if (error)
+                throw new Error(`Falha ao deslogar usuário: ${error.message}`);
+        } catch (error) {
+            throw error;
+        }
     }
 
     findById(id: string): Promise<User | null> {
-        throw new Error("Method not implemented.");
-    }
-
-    findByEmail(email: string): Promise<User | null> {
-        throw new Error("Method not implemented.");
-    }
-
-    save(user: User): Promise<void> {
         throw new Error("Method not implemented.");
     }
 
