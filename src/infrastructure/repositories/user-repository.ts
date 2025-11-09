@@ -42,6 +42,36 @@ export class UserRepository implements IUserRepository {
         }
     }
 
+    async verifyAuthentication(): Promise<User> {
+        try {
+            const { data, error } = await supabase.auth.getUser();
+
+            if (error) throw new Error(`Usuário não está autenticado`);
+
+            const userId = data.user.id;
+
+            const { data: profile, error: profileError } = await supabase
+                .from("profiles")
+                .select("name")
+                .eq("user_id", userId)
+                .single();
+
+            if (profileError)
+                throw new Error(
+                    `Falha ao recuperar usuário: ${profileError.message}`
+                );
+
+            return User.create({
+                id: data.user.id,
+                name: profile.name,
+                email: data.user.email!,
+                password: "Senha#123",
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async register(
         username: string,
         email: Email,

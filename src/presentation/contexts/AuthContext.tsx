@@ -1,4 +1,10 @@
-import { createContext, ReactNode, useContext, useState } from "react";
+import {
+    createContext,
+    ReactNode,
+    useContext,
+    useEffect,
+    useState,
+} from "react";
 import User from "../../domain/entities/User";
 import { LoginUser } from "../../application/use-cases/LoginUseCase";
 import { RegisterUserUseCase } from "../../application/use-cases/RegisterUseCase";
@@ -8,6 +14,8 @@ import { FindUserUseCase } from "../../application/use-cases/FindUserUseCase";
 import { UserRepository } from "../../infrastructure/repositories/user-repository";
 import { AxiosHttpClient } from "../../infrastructure/http/axios-http-client";
 import { LogoutUser } from "../../application/use-cases/LogoutUserUseCase";
+import { supabase } from "../../infrastructure/supabase";
+import { VerifyAuthenticationUseCase } from "../../application/use-cases/VerifyAuthenticationUseCase";
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -25,6 +33,9 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
     const updateUserUseCase = new UpdateUserUseCase(userRepository);
     const deleteUserUseCase = new DeleteUserUseCase(userRepository);
     const findUserUseCase = new FindUserUseCase(userRepository);
+    const verifyAuthentication = new VerifyAuthenticationUseCase(
+        userRepository
+    );
 
     async function login(email: string, password: string): Promise<void> {
         try {
@@ -98,6 +109,17 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
             throw error;
         }
     }
+
+    useEffect(() => {
+        (async () => {
+            const user = await verifyAuthentication.execute();
+
+            if (user) {
+                setCurrentUser(user);
+                setIsLogged(true);
+            }
+        })();
+    }, []);
 
     return (
         <AuthContext.Provider

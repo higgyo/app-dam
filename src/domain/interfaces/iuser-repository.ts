@@ -4,6 +4,7 @@ import Password from "../value-objects/Password";
 
 export interface IUserRepository {
     login(email: Email, password: Password): Promise<User>;
+    verifyAuthentication(): Promise<User>;
     register(username: string, email: Email, password: Password): Promise<User>;
     logout(): Promise<void>;
     findById(id: string): Promise<User | null>;
