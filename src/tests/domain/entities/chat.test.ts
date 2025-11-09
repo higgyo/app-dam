@@ -1,4 +1,4 @@
-import Chat from "../../../domain/entities/Chat";
+import Room from "../../../domain/entities/Room";
 import InvalidPasswordError from "../../../domain/errors/InvalidPasswordError";
 
 jest.mock("../../../domain/value-objects/Password", () => {
@@ -24,7 +24,7 @@ describe("Chat", () => {
         };
 
         // Criar o chat com uma senha válida (mas ignorando a validação da senha)
-        const chat = Chat.create(
+        const chat = Room.create(
             chatData.name,
             chatData.id,
             chatData.idUser,
@@ -33,7 +33,7 @@ describe("Chat", () => {
         );
 
         // Verificar se a instância é de Chat
-        expect(chat).toBeInstanceOf(Chat);
+        expect(chat).toBeInstanceOf(Room);
         expect(chat.name).toBe(chatData.name);
         expect(chat.id).toBe(chatData.id);
         expect(chat.idUser).toBe(chatData.idUser);
@@ -49,7 +49,7 @@ describe("Chat", () => {
             imageUrl: "http://example.com/image2.jpg",
         };
 
-        const chat = Chat.create(
+        const chat = Room.create(
             chatData.name,
             chatData.id,
             chatData.idUser,
@@ -57,7 +57,7 @@ describe("Chat", () => {
         );
 
         // Verificar se a instância é de Chat
-        expect(chat).toBeInstanceOf(Chat);
+        expect(chat).toBeInstanceOf(Room);
         expect(chat.name).toBe(chatData.name);
         expect(chat.id).toBe(chatData.id);
         expect(chat.idUser).toBe(chatData.idUser);
