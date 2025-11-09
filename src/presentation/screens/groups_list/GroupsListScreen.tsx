@@ -76,7 +76,10 @@ export function GroupsListScreen() {
                             lastMessage={`Código: ${item.code}`}
                             unreadedMessages={0}
                             onClick={() => {
-                                navigate.navigate("Conversation");
+                                navigate.navigate("Conversation", {
+                                    roomId: item.id,
+                                    roomName: item.name,
+                                });
                             }}
                         />
                     )}
