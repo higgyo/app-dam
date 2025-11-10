@@ -3,6 +3,8 @@ import { IMessageRepository } from "../../domain/interfaces/imessage-repository"
 import { IHttpClient } from "../interfaces/ihttp-client";
 import { supabase } from "../supabase";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { MessageType } from "../../shared/types"
+import { SupabaseStorageService } from "../supabase/storage-service";
 
 export class MessageRepository implements IMessageRepository {
     private realtimeChannels: Map<string, RealtimeChannel> = new Map();
@@ -13,15 +15,29 @@ export class MessageRepository implements IMessageRepository {
         content: string,
         roomId: string,
         senderId: string,
-        type: string = "text"
+        type: MessageType = MessageType.Text,
+        imageUri?: string
     ): Promise<Message> {
         try {
+            let publicUrl;
+
+            if (type === MessageType.Image && imageUri) {
+                const storage = new SupabaseStorageService()
+
+                const userId = (await supabase.auth.getUser()).data.user?.id
+
+                if (!userId) throw new Error("Falha ao enviar mensagem: usuário deve estar logado")
+
+                publicUrl = await storage.uploadImage(imageUri, 'app-dam', userId)
+            }
+
             const { data, error } = await supabase
                 .from("messages")
                 .insert({
                     content,
                     room_id: roomId,
                     sender_id: senderId,
+                    file_url: publicUrl,
                     type,
                 })
                 .select()

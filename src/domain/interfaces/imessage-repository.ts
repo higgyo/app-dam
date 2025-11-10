@@ -1,3 +1,4 @@
+import { MessageType } from "../../shared/types";
 import Message from "../entities/Message";
 
 export interface IMessageRepository {
@@ -5,7 +6,8 @@ export interface IMessageRepository {
         content: string,
         roomId: string,
         senderId: string,
-        type?: string
+        type?: MessageType,
+        imageUri?: string,
     ): Promise<Message>;
     getMessagesByRoom(roomId: string): Promise<Message[]>;
     subscribeToMessages(
