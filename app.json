@@ -33,7 +33,8 @@
           "microphonePermission": "Permitir BóConecta acessar seu microfone",
           "recordAudioAndroid": true
         }
-      ]
+      ],
+      "expo-secure-store"
     ]
   }
 }
