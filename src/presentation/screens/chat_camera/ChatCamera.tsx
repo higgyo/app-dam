@@ -20,6 +20,7 @@ import { VideoView, useVideoPlayer } from "expo-video";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 interface ChatCameraProps {
     onPhotoTaken?: (uri: string) => void;
@@ -109,6 +110,10 @@ export const ChatCamera = ({
         if (onClose) onClose();
     };
 
+    const handleClose = () => {
+        if (onClose) onClose();
+    };
+
     if (!permission || !micPermission) return <View />;
 
     if (!permission.granted || !micPermission.granted) {
@@ -126,6 +131,14 @@ export const ChatCamera = ({
                     }}
                     title="Ceder permissões"
                 />
+                {onClose && (
+                    <TouchableOpacity
+                        style={styles.closeButtonPermission}
+                        onPress={handleClose}
+                    >
+                        <Text style={styles.closeButtonText}>Cancelar</Text>
+                    </TouchableOpacity>
+                )}
             </View>
         );
     }
@@ -138,6 +151,16 @@ export const ChatCamera = ({
                     style={styles.fullscreenImage}
                     contentFit="cover"
                 />
+
+                {onClose && (
+                    <TouchableOpacity
+                        style={styles.closeButton}
+                        onPress={handleClose}
+                    >
+                        <MaterialIcons name="close" size={32} color="white" />
+                    </TouchableOpacity>
+                )}
+
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity
                         onPress={() => setPhoto(null)}
@@ -174,12 +197,22 @@ export const ChatCamera = ({
             <View style={styles.pictureContainer}>
                 {video && videoPlayer && (
                     <VideoView
+                        allowsPictureInPicture
+                        fullscreenOptions={{ enable: true }}
                         player={videoPlayer}
                         style={styles.fullscreenImage}
-                        allowsFullscreen
-                        allowsPictureInPicture
                     />
                 )}
+
+                {onClose && (
+                    <TouchableOpacity
+                        style={styles.closeButton}
+                        onPress={handleClose}
+                    >
+                        <MaterialIcons name="close" size={32} color="white" />
+                    </TouchableOpacity>
+                )}
+
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity
                         onPress={() => setVideo(null)}
@@ -222,6 +255,15 @@ export const ChatCamera = ({
                     mute={false}
                     responsiveOrientationWhenOrientationLocked
                 />
+
+                {onClose && (
+                    <TouchableOpacity
+                        style={styles.closeButton}
+                        onPress={handleClose}
+                    >
+                        <MaterialIcons name="close" size={32} color="white" />
+                    </TouchableOpacity>
+                )}
 
                 {recording && (
                     <View style={styles.recordingIndicatorContainer}>
@@ -394,6 +436,27 @@ const styles = StyleSheet.create({
     },
     recordingText: {
         color: "white",
+        fontWeight: "600",
+    },
+    closeButton: {
+        position: "absolute",
+        top: 50,
+        left: 20,
+        zIndex: 10,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        borderRadius: 20,
+        padding: 8,
+    },
+    closeButtonPermission: {
+        marginTop: 20,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        backgroundColor: "#f0f0f0",
+        borderRadius: 8,
+    },
+    closeButtonText: {
+        fontSize: 16,
+        color: "#333",
         fontWeight: "600",
     },
 });

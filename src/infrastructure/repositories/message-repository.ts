@@ -3,7 +3,7 @@ import { IMessageRepository } from "../../domain/interfaces/imessage-repository"
 import { IHttpClient } from "../interfaces/ihttp-client";
 import { supabase } from "../supabase";
 import { RealtimeChannel } from "@supabase/supabase-js";
-import { MessageType } from "../../shared/types"
+import { MessageType } from "../../shared/types";
 import { SupabaseStorageService } from "../supabase/storage-service";
 
 export class MessageRepository implements IMessageRepository {
@@ -16,19 +16,29 @@ export class MessageRepository implements IMessageRepository {
         roomId: string,
         senderId: string,
         type: MessageType = MessageType.Text,
-        imageUri?: string
+        mediaUri?: string
     ): Promise<Message> {
         try {
             let publicUrl;
 
-            if (type === MessageType.Image && imageUri) {
-                const storage = new SupabaseStorageService()
+            if (
+                (type === MessageType.Image || type === MessageType.Video) &&
+                mediaUri
+            ) {
+                const storage = new SupabaseStorageService();
 
-                const userId = (await supabase.auth.getUser()).data.user?.id
+                const userId = (await supabase.auth.getUser()).data.user?.id;
 
-                if (!userId) throw new Error("Falha ao enviar mensagem: usuário deve estar logado")
+                if (!userId)
+                    throw new Error(
+                        "Falha ao enviar mensagem: usuário deve estar logado"
+                    );
 
-                publicUrl = await storage.uploadImage(imageUri, 'app-dam', userId)
+                publicUrl = await storage.uploadImage(
+                    mediaUri,
+                    "app-dam",
+                    userId
+                );
             }
 
             const { data, error } = await supabase
@@ -101,7 +111,6 @@ export class MessageRepository implements IMessageRepository {
             supabase.removeChannel(existingChannel);
         }
 
-        // Criar novo canal
         const channel = supabase
             .channel(`room:${roomId}`)
             .on(
@@ -131,7 +140,6 @@ export class MessageRepository implements IMessageRepository {
 
         this.realtimeChannels.set(roomId, channel);
 
-        // Retornar função de cleanup
         return () => {
             supabase.removeChannel(channel);
             this.realtimeChannels.delete(roomId);

@@ -12,7 +12,9 @@ export class MockUserRepository implements IUserRepository {
 
     async login(email: Email, password: Password): Promise<User | null> {
         const user = this.database.users.find(
-            (x) => x.email.value === email.value && x.password.value === password.value
+            (x) =>
+                x.email.value === email.value &&
+                x.password.value === password.value
         );
 
         return user || null;
@@ -23,19 +25,21 @@ export class MockUserRepository implements IUserRepository {
         email: Email,
         password: Password
     ): Promise<User> {
-        const user = User.create({ name: username, email: email.value, password: password.value });
+        const user = User.create({
+            name: username,
+            email: email.value,
+            password: password.value,
+        });
         this.database.users.push(user);
         return user;
     }
 
-    async logout(): Promise<void> {
-        // Implementação simples de logout - não faz nada no mock
-    }
+    async logout(): Promise<void> {}
 
     async delete(id: string): Promise<void> {
         const index = this.database.users.findIndex((user) => user.id === id);
         if (index === -1) {
-            throw new Error('Usuário não encontrado.');
+            throw new Error("Usuário não encontrado.");
         }
         this.database.users.splice(index, 1);
     }
@@ -46,7 +50,9 @@ export class MockUserRepository implements IUserRepository {
     }
 
     async findByEmail(email: string): Promise<User | null> {
-        const user = this.database.users.find((user) => user.email.value === email);
+        const user = this.database.users.find(
+            (user) => user.email.value === email
+        );
         return user || null;
     }
 
@@ -57,7 +63,7 @@ export class MockUserRepository implements IUserRepository {
     async update(user: User): Promise<void> {
         const index = this.database.users.findIndex((u) => u.id === user.id);
         if (index === -1) {
-            throw new Error('Usuário não encontrado.');
+            throw new Error("Usuário não encontrado.");
         }
         this.database.users[index] = user;
     }

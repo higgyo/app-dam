@@ -7,8 +7,8 @@ import {
 } from "react-native";
 import { SearchInput } from "../../components/SearchInput";
 import { ChatBoard } from "../chat_list/components/ChatBoard";
-import { useNavigation } from "@react-navigation/native";
-import { useEffect, useState } from "react";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useCallback, useEffect, useState } from "react";
 import { RoomServiceFactory } from "../../../infrastructure/factories/RoomServiceFactory";
 import Room from "../../../domain/entities/Room";
 
@@ -18,9 +18,11 @@ export function GroupsListScreen() {
     const [loading, setLoading] = useState<boolean>(true);
     const [searchQuery, setSearchQuery] = useState<string>("");
 
-    useEffect(() => {
-        loadRooms();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            loadRooms();
+        }, [])
+    );
 
     const loadRooms = async () => {
         try {

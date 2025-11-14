@@ -10,13 +10,9 @@ export class SendMessageUseCase {
         roomId: string;
         senderId: string;
         type?: MessageType;
-        imageUri?: string;
+        mediaUri?: string;
     }): Promise<Message> {
-        const { content, roomId, senderId, type, imageUri } = params;
-
-        if (!content.trim()) {
-            throw new Error("Mensagem não pode estar vazia");
-        }
+        const { content, roomId, senderId, type, mediaUri } = params;
 
         if (!roomId) {
             throw new Error("ID da sala é obrigatório");
@@ -26,12 +22,19 @@ export class SendMessageUseCase {
             throw new Error("ID do remetente é obrigatório");
         }
 
+        if (!content.trim() && !mediaUri) {
+            throw new Error("Mensagem não pode estar vazia");
+        }
+
+        const finalType =
+            type ?? (mediaUri ? MessageType.Image : MessageType.Text);
+
         const message = await this.messageRepository.sendMessage(
             content,
             roomId,
             senderId,
-            type || MessageType.Text,
-            imageUri
+            finalType,
+            mediaUri
         );
 
         return message;

@@ -11,18 +11,28 @@ import {
     Alert,
     Platform,
     Keyboard,
+    Modal,
+    Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { VideoView, useVideoPlayer } from "expo-video";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { MessageServiceFactory } from "../../../infrastructure/factories/MessageServiceFactory";
 import Message from "../../../domain/entities/Message";
+import { ChatCamera } from "../chat_camera/ChatCamera";
+import { supabase } from "../../../infrastructure/supabase";
 
 type ChatScreenRouteProp = RouteProp<
     { Chat: { roomId: string; roomName: string } },
     "Chat"
 >;
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const MESSAGE_IMAGE_WIDTH = SCREEN_WIDTH * 0.6;
+const MESSAGE_IMAGE_HEIGHT = MESSAGE_IMAGE_WIDTH * 0.75;
 
 const ChatScreen = () => {
     const route = useRoute<ChatScreenRouteProp>();
@@ -36,6 +46,12 @@ const ChatScreen = () => {
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
+    const [showCamera, setShowCamera] = useState(false);
+    const [fullscreenMedia, setFullscreenMedia] = useState<{
+        uri: string;
+        type: "image" | "video";
+    } | null>(null);
+    const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
     const roomId = route.params?.roomId;
     const roomName = route.params?.roomName || "Chat";
@@ -53,7 +69,6 @@ const ChatScreen = () => {
 
         loadMessages();
 
-        // Subscribe to real-time messages
         const unsubscribe = messageRepository.subscribeToMessages(
             roomId,
             (newMessage) => {
@@ -64,7 +79,6 @@ const ChatScreen = () => {
             }
         );
 
-        // Keyboard listeners
         const keyboardWillShow = Keyboard.addListener(
             Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
             (e) => {
@@ -88,6 +102,55 @@ const ChatScreen = () => {
             keyboardWillHide.remove();
         };
     }, [roomId]);
+
+    useEffect(() => {
+        const generateSignedUrls = async () => {
+            const updates: Record<string, string> = {};
+
+            for (const msg of messages) {
+                if (!msg.fileUrl) continue;
+                if (signedUrls[msg.id]) continue;
+
+                let path = msg.fileUrl;
+
+                if (path.startsWith("http://") || path.startsWith("https://")) {
+                    try {
+                        const url = new URL(path);
+                        const segments = url.pathname
+                            .split("/")
+                            .filter(Boolean);
+                        const bucketIndex = segments.indexOf("app-dam");
+
+                        if (bucketIndex !== -1) {
+                            path = segments.slice(bucketIndex + 1).join("/");
+                        } else {
+                            path = segments[segments.length - 1];
+                        }
+                    } catch (error) {
+                        console.log(error);
+                    }
+                }
+
+                const { data, error } = await supabase.storage
+                    .from("app-dam")
+                    .createSignedUrl(path, 60 * 60);
+
+                if (!error && data?.signedUrl) {
+                    updates[msg.id] = data.signedUrl;
+                } else {
+                    console.log("Erro ao gerar signed URL:", path, error);
+                }
+            }
+
+            if (Object.keys(updates).length > 0) {
+                setSignedUrls((prev) => ({ ...prev, ...updates }));
+            }
+        };
+
+        if (messages.length > 0) {
+            generateSignedUrls();
+        }
+    }, [messages, signedUrls]);
 
     const loadMessages = async () => {
         try {
@@ -123,6 +186,48 @@ const ChatScreen = () => {
         }
     };
 
+    const handlePhotoTaken = async (uri: string) => {
+        setShowCamera(false);
+
+        if (!currentUser) return;
+
+        try {
+            setSending(true);
+            await sendMessageUseCase.execute({
+                content: "",
+                roomId,
+                senderId: currentUser.id!,
+                mediaUri: uri,
+                type: "image",
+            });
+        } catch (error: any) {
+            Alert.alert("Erro", error.message || "Falha ao enviar foto");
+        } finally {
+            setSending(false);
+        }
+    };
+
+    const handleVideoRecorded = async (uri: string) => {
+        setShowCamera(false);
+
+        if (!currentUser) return;
+
+        try {
+            setSending(true);
+            await sendMessageUseCase.execute({
+                content: "",
+                roomId,
+                senderId: currentUser.id!,
+                mediaUri: uri,
+                type: "video",
+            });
+        } catch (error: any) {
+            Alert.alert("Erro", error.message || "Falha ao enviar vídeo");
+        } finally {
+            setSending(false);
+        }
+    };
+
     const formatTime = (dateString: string) => {
         const date = new Date(dateString);
         return date.toLocaleTimeString("pt-BR", {
@@ -130,6 +235,159 @@ const ChatScreen = () => {
             minute: "2-digit",
         });
     };
+
+    const getMediaUri = (msg: Message) => {
+        if (signedUrls[msg.id]) return signedUrls[msg.id];
+        if (msg.fileUrl) return msg.fileUrl;
+        return msg.content;
+    };
+
+    const renderMessageContent = (msg: Message, isSent: boolean) => {
+        const mediaUri = getMediaUri(msg);
+
+        switch (msg.type) {
+            case "image":
+                if (!mediaUri) return null;
+
+                return (
+                    <TouchableOpacity
+                        onPress={() =>
+                            setFullscreenMedia({
+                                uri: mediaUri,
+                                type: "image",
+                            })
+                        }
+                        activeOpacity={0.8}
+                    >
+                        <Image
+                            source={{ uri: mediaUri }}
+                            style={styles.messageImage}
+                            contentFit="cover"
+                        />
+                        <Text
+                            style={
+                                isSent ? styles.sentTimeText : styles.timeText
+                            }
+                        >
+                            {formatTime(msg.createdAt)}
+                        </Text>
+                    </TouchableOpacity>
+                );
+
+            case "video":
+                if (!mediaUri) return null;
+
+                return (
+                    <TouchableOpacity
+                        onPress={() =>
+                            setFullscreenMedia({
+                                uri: mediaUri,
+                                type: "video",
+                            })
+                        }
+                        activeOpacity={0.8}
+                    >
+                        <View style={styles.videoContainer}>
+                            <Image
+                                source={{ uri: mediaUri }}
+                                style={styles.messageImage}
+                                contentFit="cover"
+                            />
+                            <View style={styles.videoPlayIcon}>
+                                <FontAwesome
+                                    name="play-circle"
+                                    size={48}
+                                    color="white"
+                                />
+                            </View>
+                        </View>
+                        <Text
+                            style={
+                                isSent ? styles.sentTimeText : styles.timeText
+                            }
+                        >
+                            {formatTime(msg.createdAt)}
+                        </Text>
+                    </TouchableOpacity>
+                );
+
+            default:
+                return (
+                    <>
+                        <Text
+                            style={
+                                isSent ? styles.sentText : styles.receivedText
+                            }
+                        >
+                            {msg.content}
+                        </Text>
+                        <Text
+                            style={
+                                isSent ? styles.sentTimeText : styles.timeText
+                            }
+                        >
+                            {formatTime(msg.createdAt)}
+                        </Text>
+                    </>
+                );
+        }
+    };
+
+    const FullscreenMediaModal = () => {
+        if (!fullscreenMedia) return null;
+
+        const videoPlayer =
+            fullscreenMedia.type === "video"
+                ? useVideoPlayer(fullscreenMedia.uri, (player) => {
+                      player.loop = false;
+                      player.play();
+                  })
+                : null;
+
+        return (
+            <Modal
+                visible={!!fullscreenMedia}
+                transparent={false}
+                animationType="fade"
+                onRequestClose={() => setFullscreenMedia(null)}
+            >
+                <View style={styles.fullscreenContainer}>
+                    <TouchableOpacity
+                        style={styles.closeButton}
+                        onPress={() => setFullscreenMedia(null)}
+                    >
+                        <MaterialIcons name="close" size={32} color="white" />
+                    </TouchableOpacity>
+
+                    {fullscreenMedia.type === "image" ? (
+                        <Image
+                            source={{ uri: fullscreenMedia.uri }}
+                            style={styles.fullscreenMedia}
+                            contentFit="contain"
+                        />
+                    ) : videoPlayer ? (
+                        <VideoView
+                            player={videoPlayer}
+                            style={styles.fullscreenMedia}
+                            fullscreenOptions={{ enable: true }}
+                        />
+                    ) : null}
+                </View>
+            </Modal>
+        );
+    };
+
+    if (showCamera) {
+        return (
+            <Modal visible={showCamera} animationType="slide">
+                <ChatCamera
+                    onPhotoTaken={handlePhotoTaken}
+                    onVideoRecorded={handleVideoRecorded}
+                    onClose={() => setShowCamera(false)}
+                />
+            </Modal>
+        );
+    }
 
     if (loading) {
         return (
@@ -196,24 +454,26 @@ const ChatScreen = () => {
                             <View key={msg.id} style={styles.messageContainer}>
                                 {!isSent ? (
                                     <View style={styles.receivedMessageRow}>
-                                        <View style={styles.receivedBubble}>
-                                            <Text style={styles.receivedText}>
-                                                {msg.content}
-                                            </Text>
-                                            <Text style={styles.timeText}>
-                                                {formatTime(msg.createdAt)}
-                                            </Text>
+                                        <View
+                                            style={[
+                                                styles.receivedBubble,
+                                                msg.type !== "text" &&
+                                                    styles.mediaBubble,
+                                            ]}
+                                        >
+                                            {renderMessageContent(msg, isSent)}
                                         </View>
                                     </View>
                                 ) : (
                                     <View style={styles.sentMessageRow}>
-                                        <View style={styles.sentBubble}>
-                                            <Text style={styles.sentText}>
-                                                {msg.content}
-                                            </Text>
-                                            <Text style={styles.sentTimeText}>
-                                                {formatTime(msg.createdAt)}
-                                            </Text>
+                                        <View
+                                            style={[
+                                                styles.sentBubble,
+                                                msg.type !== "text" &&
+                                                    styles.mediaBubble,
+                                            ]}
+                                        >
+                                            {renderMessageContent(msg, isSent)}
                                         </View>
                                     </View>
                                 )}
@@ -240,8 +500,11 @@ const ChatScreen = () => {
                     },
                 ]}
             >
-                <TouchableOpacity style={styles.plusButton}>
-                    <FontAwesome name="plus" size={24} color="#007AFF" />
+                <TouchableOpacity
+                    style={styles.plusButton}
+                    onPress={() => setShowCamera(true)}
+                >
+                    <FontAwesome name="camera" size={24} color="#007AFF" />
                 </TouchableOpacity>
 
                 <View style={styles.inputWrapper}>
@@ -274,21 +537,16 @@ const ChatScreen = () => {
                     )}
                 </TouchableOpacity>
             </View>
+
+            <FullscreenMediaModal />
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: "#f0f0f0",
-    },
     container: {
         flex: 1,
         backgroundColor: "#f0f0f0",
-    },
-    flex: {
-        flex: 1,
     },
     centerContent: {
         justifyContent: "center",
@@ -317,11 +575,6 @@ const styles = StyleSheet.create({
     backButton: {
         marginRight: 16,
     },
-    backArrow: {
-        fontSize: 24,
-        color: "#007AFF",
-        fontWeight: "300",
-    },
     headerTitle: {
         flex: 1,
     },
@@ -337,9 +590,6 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         alignItems: "center",
         justifyContent: "center",
-    },
-    profileIconText: {
-        fontSize: 16,
     },
     messagesContainer: {
         flex: 1,
@@ -397,11 +647,9 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         maxWidth: 280,
     },
-    senderName: {
-        fontSize: 13,
-        fontWeight: "600",
-        color: "#666",
-        marginBottom: 2,
+    mediaBubble: {
+        padding: 4,
+        maxWidth: MESSAGE_IMAGE_WIDTH + 8,
     },
     receivedText: {
         fontSize: 16,
@@ -425,6 +673,21 @@ const styles = StyleSheet.create({
         marginTop: 4,
         alignSelf: "flex-end",
     },
+    messageImage: {
+        width: MESSAGE_IMAGE_WIDTH,
+        height: MESSAGE_IMAGE_HEIGHT,
+        borderRadius: 12,
+    },
+    videoContainer: {
+        position: "relative",
+    },
+    videoPlayIcon: {
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        marginTop: -24,
+        marginLeft: -24,
+    },
     inputContainer: {
         backgroundColor: "white",
         flexDirection: "row",
@@ -436,10 +699,6 @@ const styles = StyleSheet.create({
     },
     plusButton: {
         marginRight: 12,
-    },
-    plusIcon: {
-        fontSize: 20,
-        color: "#007AFF",
     },
     inputWrapper: {
         flex: 1,
@@ -463,6 +722,34 @@ const styles = StyleSheet.create({
     },
     sendButtonDisabled: {
         backgroundColor: "#B4DBFF",
+    },
+    fullscreenContainer: {
+        flex: 1,
+        backgroundColor: "black",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    fullscreenMedia: {
+        width: "100%",
+        height: "100%",
+    },
+    closeButton: {
+        position: "absolute",
+        top: 50,
+        right: 20,
+        zIndex: 10,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        borderRadius: 20,
+        padding: 8,
+    },
+    cameraCancelButton: {
+        position: "absolute",
+        top: 50,
+        left: 20,
+        zIndex: 10,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        borderRadius: 20,
+        padding: 8,
     },
 });
 

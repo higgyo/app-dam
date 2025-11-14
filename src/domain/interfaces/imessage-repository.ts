@@ -7,7 +7,7 @@ export interface IMessageRepository {
         roomId: string,
         senderId: string,
         type?: MessageType,
-        imageUri?: string,
+        mediaUri?: string
     ): Promise<Message>;
     getMessagesByRoom(roomId: string): Promise<Message[]>;
     subscribeToMessages(

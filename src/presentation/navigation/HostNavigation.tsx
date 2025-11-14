@@ -1,6 +1,5 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { HomeScreen } from "../screens/home/HomeScreen";
 import { LoginScreen } from "../screens/login/LoginScreen";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { useAuthContext } from "../contexts/AuthContext";
@@ -11,8 +10,8 @@ import ChatScreen from "../screens/chat/ChatScreen";
 import { RegisterScreen } from "../screens/register/RegisterScreen";
 import { CreateRoom } from "../screens/createroom/CreateRoom";
 import { EnterRoom } from "../screens/enterroom/EnterRoom";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { RootStackParamList } from "./types";
-import { ChatCamera } from "../screens/chat_camera/ChatCamera";
 
 export function HostNavigation() {
     const auth = useAuthContext();
@@ -27,7 +26,7 @@ export function HostNavigation() {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Drawer = createDrawerNavigator();
 const BottomTab = createBottomTabNavigator();
-const ChatStackNav = createNativeStackNavigator();
+const ChatStack = createNativeStackNavigator();
 
 function PublicRoutes() {
     return (
@@ -46,66 +45,88 @@ function PublicRoutes() {
     );
 }
 
-function ChatStack() {
-    return (
-        <Drawer.Navigator initialRouteName="ChatTabs">
-            <Drawer.Screen
-                name="ChatTabs"
-                component={GroupsListScreen}
-                options={{ title: "Conversas" }}
-            />
-            <ChatStackNav.Screen
-                name="Conversation"
-                component={ChatScreen}
-                options={{ title: "Conversa" }}
-            />
-            <ChatStackNav.Screen
-                name="Camera"
-                component={ChatCamera}
-                options={{ title: "Usar Câmera" }}
-            />
-        </Drawer.Navigator>
-    );
-}
-
 function ChatBottomTabs() {
     return (
-        <BottomTab.Navigator screenOptions={{ headerShown: false }}>
-            <BottomTab.Screen
-                name="ChatsTab"
-                component={ChatStack}
-                options={{
-                    tabBarLabel: "Chats",
-                }}
-            />
+        <BottomTab.Navigator
+            screenOptions={{
+                headerShown: false,
+                tabBarActiveTintColor: "#007AFF",
+                tabBarInactiveTintColor: "#999",
+            }}
+        >
             <BottomTab.Screen
                 name="Groups"
                 component={GroupsListScreen}
                 options={{
-                    tabBarLabel: "Grupos de Localização",
+                    tabBarLabel: "Grupos",
+                    tabBarIcon: ({ color, size }) => (
+                        <MaterialIcons
+                            name="groups"
+                            size={size}
+                            color={color}
+                        />
+                    ),
                 }}
             />
         </BottomTab.Navigator>
     );
 }
 
+function ChatStackNavigator() {
+    return (
+        <ChatStack.Navigator screenOptions={{ headerShown: false }}>
+            <ChatStack.Screen name="ChatTabs" component={ChatBottomTabs} />
+            <ChatStack.Screen name="Conversation" component={ChatScreen} />
+        </ChatStack.Navigator>
+    );
+}
+
 function ProtectedRoutes() {
     return (
-        <Drawer.Navigator initialRouteName="ChatTabs">
+        <Drawer.Navigator
+            initialRouteName="ChatArea"
+            screenOptions={{
+                drawerActiveTintColor: "#007AFF",
+                drawerInactiveTintColor: "#444",
+            }}
+        >
             <Drawer.Screen
-                name="ChatTabs"
-                component={ChatBottomTabs}
-                options={{ title: "Conversas" }}
+                name="ChatArea"
+                component={ChatStackNavigator}
+                options={{
+                    title: "Conversas",
+                    drawerIcon: ({ color, size }) => (
+                        <MaterialIcons
+                            name="chat-bubble"
+                            size={size}
+                            color={color}
+                        />
+                    ),
+                }}
             />
             <Drawer.Screen
                 name="CreateRoom"
                 component={CreateRoom}
-                options={{ title: "Criar Sala" }}
+                options={{
+                    title: "Criar Sala",
+                    drawerIcon: ({ color, size }) => (
+                        <MaterialIcons
+                            name="add-circle-outline"
+                            size={size}
+                            color={color}
+                        />
+                    ),
+                }}
             />
             <Drawer.Screen
                 name="EnterRoom"
                 component={EnterRoom}
-                options={{ title: "Adentrar Sala" }}
+                options={{
+                    title: "Adentrar Sala",
+                    drawerIcon: ({ color, size }) => (
+                        <MaterialIcons name="login" size={size} color={color} />
+                    ),
+                }}
             />
         </Drawer.Navigator>
     );
