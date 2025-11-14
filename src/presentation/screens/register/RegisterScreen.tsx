@@ -60,7 +60,7 @@ export function RegisterScreen() {
             setSuccess("Cadastro realizado com sucesso!");
             setTimeout(() => {
                 navigation.navigate("Login");
-            }, 1500);
+            }, 1000);
         } catch (err: any) {
             setError(err.message || "Erro ao fazer cadastro");
         }
@@ -98,16 +98,16 @@ export function RegisterScreen() {
                     keyboardType="email-address"
                 />
 
-                <TextInput 
-                    placeholder="********" 
+                <TextInput
+                    placeholder="********"
                     style={styles.input}
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
                 />
 
-                <TextInput 
-                    placeholder="********" 
+                <TextInput
+                    placeholder="********"
                     style={styles.input}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
@@ -115,9 +115,14 @@ export function RegisterScreen() {
                 />
 
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
-                {success ? <Text style={styles.successText}>{success}</Text> : null}
+                {success ? (
+                    <Text style={styles.successText}>{success}</Text>
+                ) : null}
 
-                <TouchableOpacity style={styles.button} onPress={handleRegister}>
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={handleRegister}
+                >
                     <Text style={styles.buttonText}>Cadastrar-se</Text>
                 </TouchableOpacity>
 

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "BóConecta",
+    "slug": "BóConecta",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,7 +13,10 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -27,7 +30,8 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.nicolasgabrieldev.app"
+      "package": "com.nicolasgabrieldev.app",
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -47,6 +51,9 @@
       "eas": {
         "projectId": "7a60c781-e3e0-4703-b43e-df7bcda4dae4"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/7a60c781-e3e0-4703-b43e-df7bcda4dae4"
     }
   }
 }

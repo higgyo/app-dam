@@ -12,6 +12,7 @@ import { CreateRoom } from "../screens/createroom/CreateRoom";
 import { EnterRoom } from "../screens/enterroom/EnterRoom";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { RootStackParamList } from "./types";
+import { LogoutScreen } from "../screens/logout/LogoutScreen";
 
 export function HostNavigation() {
     const auth = useAuthContext();
@@ -82,6 +83,8 @@ function ChatStackNavigator() {
 }
 
 function ProtectedRoutes() {
+    const auth = useAuthContext();
+
     return (
         <Drawer.Navigator
             initialRouteName="ChatArea"
@@ -104,6 +107,7 @@ function ProtectedRoutes() {
                     ),
                 }}
             />
+
             <Drawer.Screen
                 name="CreateRoom"
                 component={CreateRoom}
@@ -118,6 +122,7 @@ function ProtectedRoutes() {
                     ),
                 }}
             />
+
             <Drawer.Screen
                 name="EnterRoom"
                 component={EnterRoom}
@@ -125,6 +130,21 @@ function ProtectedRoutes() {
                     title: "Adentrar Sala",
                     drawerIcon: ({ color, size }) => (
                         <MaterialIcons name="login" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Drawer.Screen
+                name="Logout"
+                component={LogoutScreen}
+                options={{
+                    title: "Sair",
+                    drawerIcon: ({ color, size }) => (
+                        <MaterialIcons
+                            name="logout"
+                            size={size}
+                            color={color}
+                        />
                     ),
                 }}
             />
