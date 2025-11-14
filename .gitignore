@@ -40,3 +40,5 @@ coverage/
 .env
 .env.production
 .env.development
+
+android/

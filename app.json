@@ -31,7 +31,9 @@
         "android.permission.RECORD_AUDIO"
       ],
       "package": "com.nicolasgabrieldev.app",
-      "runtimeVersion": "1.0.0"
+      "runtimeVersion": { 
+        "policy": "appVersion"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
