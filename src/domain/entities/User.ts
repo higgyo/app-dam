@@ -1,15 +1,15 @@
 import Email from "../value-objects/Email";
 import GeoLocation from "../value-objects/GeoLocation";
 import Password from "../value-objects/Password";
-import * as Crypto from "expo-crypto"
+import * as Crypto from "expo-crypto";
 
 export default class User {
     private constructor(
+        readonly id: string,
         readonly name: string,
         readonly email: Email,
         readonly password: Password,
-        readonly location?: GeoLocation,
-        readonly id?: string
+        readonly location?: GeoLocation
     ) {}
 
     static create(user: {
@@ -20,22 +20,24 @@ export default class User {
         longitude?: number;
         id?: string;
     }) {
-        if (user.latitude && user.longitude) {
+        const finalId = user.id?.length ? user.id : Crypto.randomUUID();
+
+        if (user.latitude != null && user.longitude != null) {
             return new User(
+                finalId,
                 user.name,
                 Email.create(user.email),
                 Password.create(user.password),
-                GeoLocation.create(user.latitude, user.longitude),
-                user.id?.length ? user.id : Crypto.randomUUID()
+                GeoLocation.create(user.latitude, user.longitude)
             );
         }
 
         return new User(
+            finalId,
             user.name,
             Email.create(user.email),
             Password.create(user.password),
-            undefined,
-            user.id?.length ? user.id : Crypto.randomUUID()
+            undefined
         );
     }
 }

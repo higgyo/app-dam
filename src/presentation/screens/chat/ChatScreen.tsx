@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     View,
     Text,
@@ -7,63 +7,149 @@ import {
     ScrollView,
     StatusBar,
     StyleSheet,
+    Modal,
+    Image,
 } from "react-native";
-
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
+import { ChatCamera } from "../chat_camera/ChatCamera";
+import { IChatRepository } from "../../../domain/interfaces/ichat-repository";
+import { useAuthContext } from "../../contexts/AuthContext";
 
-const ChatScreen = () => {
+interface ChatScreenProps {
+    chatRepository?: IChatRepository;
+    currentChatId?: string;
+}
+
+type UiMessage = {
+    id: number;
+    text?: string;
+    sender: string;
+    type: "sent" | "received";
+    time: string;
+    mediaUrl?: string;
+};
+
+const ChatScreen: React.FC<ChatScreenProps> = ({
+    chatRepository,
+    currentChatId = "chat-1",
+}) => {
     const [message, setMessage] = useState("");
-    const [messages, setMessages] = useState([
-        {
-            id: 1,
-            text: "Oi Nicolas, vamos almoçar aqui no Eri?",
-            sender: "Higor",
-            type: "received",
-            time: "9:41",
-        },
-        {
-            id: 2,
-            text: "Você tá aqui perto mesmo...",
-            sender: "Higor",
-            type: "received",
-            time: "9:41",
-        },
-        {
-            id: 3,
-            text: "Oi Higor!",
-            sender: "Nicolas",
-            type: "sent",
-            time: "9:41",
-        },
-        {
-            id: 4,
-            text: "Acabando aqui eu vou =)",
-            sender: "Nicolas",
-            type: "sent",
-            time: "9:41",
-        },
-        {
-            id: 5,
-            text: "Fechou!",
-            sender: "Higor",
-            type: "received",
-            time: "9:41",
-        },
-    ]);
+    const [messages, setMessages] = useState<UiMessage[]>([]);
+    const [showCamera, setShowCamera] = useState(false);
 
-    const sendMessage = () => {
-        if (message.trim()) {
-            const newMessage = {
-                id: messages.length + 1,
-                text: message,
-                sender: "Nicolas",
-                type: "sent",
-                time: "9:41",
-            };
-            setMessages([...messages, newMessage]);
-            setMessage("");
+    const { currentUser } = useAuthContext();
+
+    const currentUserId = currentUser?.id ?? "";
+
+    const handleAppendMessage = (partial: Omit<UiMessage, "id" | "time">) => {
+        const newMessage: UiMessage = {
+            id: messages.length + 1,
+            time: "agora",
+            ...partial,
+        };
+        setMessages((prev) => [...prev, newMessage]);
+    };
+
+    const sendMessage = async () => {
+        const trimmed = message.trim();
+        if (!trimmed) return;
+
+        handleAppendMessage({
+            text: trimmed,
+            sender: "Nicolas",
+            type: "sent",
+        });
+        setMessage("");
+
+        if (chatRepository) {
+            try {
+                await chatRepository.sendMessage(
+                    trimmed,
+                    currentUserId,
+                    currentChatId
+                );
+            } catch {}
         }
     };
+
+    const handlePhotoTaken = async (uri: string) => {
+        handleAppendMessage({
+            sender: "Nicolas",
+            type: "sent",
+            mediaUrl: uri,
+        });
+
+        if (chatRepository) {
+            try {
+                await chatRepository.sendMessage(
+                    "",
+                    currentUserId,
+                    currentChatId,
+                    uri
+                );
+            } catch {}
+        }
+    };
+
+    const handleVideoRecorded = async (uri: string) => {
+        handleAppendMessage({
+            sender: "Nicolas",
+            type: "sent",
+            mediaUrl: uri,
+        });
+
+        if (chatRepository) {
+            try {
+                await chatRepository.sendMessage(
+                    "",
+                    currentUserId,
+                    currentChatId,
+                    uri
+                );
+            } catch {}
+        }
+    };
+    useEffect(() => {
+        if (!chatRepository) return;
+
+        let isMounted = true;
+
+        (async () => {
+            try {
+                const domainMessages = await chatRepository.getMessagesByChat(
+                    currentChatId
+                );
+
+                if (!isMounted) return;
+
+                const uiMessages: UiMessage[] = domainMessages.map(
+                    (domainMessage, index) => ({
+                        id: index + 1,
+                        text:
+                            (domainMessage as any).message ??
+                            (domainMessage as any).text ??
+                            "",
+                        sender:
+                            (domainMessage as any).idUser === currentUserId
+                                ? "Nicolas"
+                                : "Outro usuário",
+                        type:
+                            (domainMessage as any).idUser === currentUserId
+                                ? "sent"
+                                : "received",
+                        time: "agora",
+                        mediaUrl: (domainMessage as any).mediaUrl,
+                    })
+                );
+
+                setMessages(uiMessages);
+            } catch (error) {}
+        })();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [chatRepository, currentChatId, currentUserId]);
 
     return (
         <View style={styles.container}>
@@ -101,17 +187,33 @@ const ChatScreen = () => {
                                             {msg.sender}
                                         </Text>
                                     )}
-                                    <Text style={styles.receivedText}>
-                                        {msg.text}
-                                    </Text>
+                                    {msg.text ? (
+                                        <Text style={styles.receivedText}>
+                                            {msg.text}
+                                        </Text>
+                                    ) : null}
+                                    {msg.mediaUrl ? (
+                                        <Image
+                                            source={{ uri: msg.mediaUrl }}
+                                            style={styles.messageImage}
+                                        />
+                                    ) : null}
                                 </View>
                             </View>
                         ) : (
                             <View style={styles.sentMessageRow}>
                                 <View style={styles.sentBubble}>
-                                    <Text style={styles.sentText}>
-                                        {msg.text}
-                                    </Text>
+                                    {msg.text ? (
+                                        <Text style={styles.sentText}>
+                                            {msg.text}
+                                        </Text>
+                                    ) : null}
+                                    {msg.mediaUrl ? (
+                                        <Image
+                                            source={{ uri: msg.mediaUrl }}
+                                            style={styles.messageImage}
+                                        />
+                                    ) : null}
                                 </View>
                             </View>
                         )}
@@ -122,6 +224,13 @@ const ChatScreen = () => {
             <View style={styles.inputContainer}>
                 <TouchableOpacity style={styles.plusButton}>
                     <FontAwesome name="plus" size={24} color="#007AFF" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.cameraButton}
+                    onPress={() => setShowCamera(true)}
+                >
+                    <FontAwesome name="camera" size={22} color="#007AFF" />
                 </TouchableOpacity>
 
                 <View style={styles.inputWrapper}>
@@ -143,6 +252,14 @@ const ChatScreen = () => {
                     <FontAwesome name="send" size={16} color="white" />
                 </TouchableOpacity>
             </View>
+
+            <Modal visible={showCamera} animationType="slide">
+                <ChatCamera
+                    onPhotoTaken={handlePhotoTaken}
+                    onVideoRecorded={handleVideoRecorded}
+                    onClose={() => setShowCamera(false)}
+                />
+            </Modal>
         </View>
     );
 };
@@ -150,55 +267,43 @@ const ChatScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#f0f0f0",
+        backgroundColor: "#fff",
     },
     header: {
-        backgroundColor: "white",
         flexDirection: "row",
         alignItems: "center",
         paddingHorizontal: 16,
         paddingVertical: 12,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 3,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: "#ddd",
     },
     backButton: {
-        marginRight: 16,
-    },
-    backArrow: {
-        fontSize: 24,
-        color: "#007AFF",
-        fontWeight: "300",
+        paddingRight: 8,
+        paddingVertical: 4,
     },
     headerTitle: {
         flex: 1,
+        alignItems: "center",
     },
     titleText: {
-        fontSize: 17,
+        fontSize: 16,
         fontWeight: "600",
         color: "#000",
     },
     profileIcon: {
         width: 32,
         height: 32,
-        backgroundColor: "#e3f2fd",
         borderRadius: 16,
+        backgroundColor: "#E5F2FF",
         alignItems: "center",
         justifyContent: "center",
     },
-    profileIconText: {
-        fontSize: 16,
-    },
     messagesContainer: {
         flex: 1,
+        paddingHorizontal: 16,
     },
     messagesContent: {
-        padding: 16,
+        paddingVertical: 16,
     },
     messageContainer: {
         marginBottom: 8,
@@ -212,78 +317,71 @@ const styles = StyleSheet.create({
         justifyContent: "flex-end",
     },
     receivedBubble: {
-        backgroundColor: "white",
-        borderRadius: 18,
+        maxWidth: "80%",
+        backgroundColor: "#F1F0F0",
+        borderRadius: 16,
         paddingHorizontal: 12,
         paddingVertical: 8,
-        maxWidth: 280,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
     },
     sentBubble: {
+        maxWidth: "80%",
         backgroundColor: "#007AFF",
-        borderRadius: 18,
+        borderRadius: 16,
         paddingHorizontal: 12,
         paddingVertical: 8,
-        maxWidth: 280,
     },
     senderName: {
-        fontSize: 13,
+        fontSize: 11,
         fontWeight: "600",
-        color: "#666",
+        color: "#555",
         marginBottom: 2,
     },
     receivedText: {
-        fontSize: 16,
+        fontSize: 14,
         color: "#000",
-        lineHeight: 20,
     },
     sentText: {
-        fontSize: 16,
-        color: "white",
-        lineHeight: 20,
+        fontSize: 14,
+        color: "#fff",
+    },
+    messageImage: {
+        marginTop: 6,
+        borderRadius: 10,
+        width: 200,
+        height: 200,
+        backgroundColor: "#000",
     },
     inputContainer: {
-        backgroundColor: "white",
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderTopWidth: 1,
-        borderTopColor: "#e0e0e0",
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: "#ddd",
     },
     plusButton: {
-        marginRight: 12,
+        marginRight: 8,
     },
-    plusIcon: {
-        fontSize: 20,
-        color: "#007AFF",
+    cameraButton: {
+        marginRight: 8,
     },
     inputWrapper: {
         flex: 1,
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "#F3F3F3",
         borderRadius: 20,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
     },
     textInput: {
-        fontSize: 16,
+        fontSize: 14,
         color: "#000",
     },
     sendButton: {
-        height: 42,
-        width: 42,
+        marginLeft: 8,
         backgroundColor: "#007AFF",
-        borderRadius: 42,
-        alignItems: "center",
-        justifyContent: "center",
-        marginLeft: 12,
+        borderRadius: 20,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
     },
 });
 

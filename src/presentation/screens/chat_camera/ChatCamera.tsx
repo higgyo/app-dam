@@ -5,8 +5,16 @@ import {
     CameraMode,
     useMicrophonePermissions,
 } from "expo-camera";
-import { useRef, useState, useEffect } from "react";
-import { Button, Dimensions, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useRef, useState } from "react";
+import {
+    Button,
+    Dimensions,
+    Pressable,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 import { Image } from "expo-image";
 import { VideoView, useVideoPlayer } from "expo-video";
 import AntDesign from "@expo/vector-icons/AntDesign";
@@ -16,9 +24,14 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 interface ChatCameraProps {
     onPhotoTaken?: (uri: string) => void;
     onVideoRecorded?: (uri: string) => void;
+    onClose?: () => void;
 }
 
-export const ChatCamera = ({ onPhotoTaken, onVideoRecorded }: ChatCameraProps = {}) => {
+export const ChatCamera = ({
+    onPhotoTaken,
+    onVideoRecorded,
+    onClose,
+}: ChatCameraProps = {}) => {
     const [facing, setFacing] = useState<CameraType>("back");
     const [permission, requestPermission] = useCameraPermissions();
     const [micPermission, requestMicPermission] = useMicrophonePermissions();
@@ -28,6 +41,15 @@ export const ChatCamera = ({ onPhotoTaken, onVideoRecorded }: ChatCameraProps = 
     const [recording, setRecording] = useState<boolean>(false);
 
     const cameraRef = useRef<CameraView>(null);
+
+    const videoPlayer = useVideoPlayer(video?.uri ?? "", (player) => {
+        if (video?.uri) {
+            player.loop = true;
+            player.play();
+        } else {
+            player.pause();
+        }
+    });
 
     const toggleCameraFacing = () => {
         setFacing((prev) => (prev === "back" ? "front" : "back"));
@@ -60,27 +82,31 @@ export const ChatCamera = ({ onPhotoTaken, onVideoRecorded }: ChatCameraProps = 
 
         setRecording(true);
 
-        cameraRef.current?.recordAsync().then((videoResult) => {
-            if (videoResult) {
-                setVideo({ uri: videoResult.uri });
-            }
-            setRecording(false);
-        }).catch((error) => {
-            console.error("Erro ao gravar vídeo:", error);
-            setRecording(false);
-        });
+        cameraRef.current
+            ?.recordAsync()
+            .then((videoResult) => {
+                if (videoResult) {
+                    setVideo({ uri: videoResult.uri });
+                }
+                setRecording(false);
+            })
+            .catch(() => {
+                setRecording(false);
+            });
     };
 
     const handleSendPhoto = () => {
         if (photo && onPhotoTaken) {
             onPhotoTaken(photo);
         }
+        if (onClose) onClose();
     };
 
     const handleSendVideo = () => {
         if (video && onVideoRecorded) {
             onVideoRecorded(video.uri);
         }
+        if (onClose) onClose();
     };
 
     if (!permission || !micPermission) return <View />;
@@ -89,23 +115,20 @@ export const ChatCamera = ({ onPhotoTaken, onVideoRecorded }: ChatCameraProps = 
         return (
             <View style={styles.container}>
                 <Text style={styles.message}>
-                    Para conseguir usar a câmera e gravar vídeos com áudio, precisamos da sua permissão! Clique no botão abaixo para ceder as permissões.
+                    Para conseguir usar a câmera e gravar vídeos com áudio,
+                    precisamos da sua permissão! Clique no botão abaixo para
+                    ceder as permissões.
                 </Text>
-                <Button 
+                <Button
                     onPress={() => {
                         requestPermission();
                         requestMicPermission();
-                    }} 
-                    title="Ceder permissões" 
+                    }}
+                    title="Ceder permissões"
                 />
             </View>
         );
     }
-
-    const videoPlayer = video ? useVideoPlayer(video.uri, (player) => {
-        player.loop = true;
-        player.play();
-    }) : null;
 
     const renderPicture = (uri: string) => {
         return (
@@ -116,13 +139,29 @@ export const ChatCamera = ({ onPhotoTaken, onVideoRecorded }: ChatCameraProps = 
                     contentFit="cover"
                 />
                 <View style={styles.buttonContainer}>
-                    <TouchableOpacity onPress={() => setPhoto(null)} style={styles.button}>
-                        <Feather name="camera" size={20} color="#fff" style={styles.buttonIcon} />
+                    <TouchableOpacity
+                        onPress={() => setPhoto(null)}
+                        style={styles.button}
+                    >
+                        <Feather
+                            name="camera"
+                            size={20}
+                            color="#fff"
+                            style={styles.buttonIcon}
+                        />
                         <Text style={styles.buttonText}>Tirar outra foto</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={handleSendPhoto} style={styles.button}>
-                        <AntDesign name="upload" size={20} color="#fff" style={styles.buttonIcon} />
+                    <TouchableOpacity
+                        onPress={handleSendPhoto}
+                        style={styles.button}
+                    >
+                        <AntDesign
+                            name="upload"
+                            size={20}
+                            color="#fff"
+                            style={styles.buttonIcon}
+                        />
                         <Text style={styles.buttonText}>Enviar foto</Text>
                     </TouchableOpacity>
                 </View>
@@ -133,7 +172,7 @@ export const ChatCamera = ({ onPhotoTaken, onVideoRecorded }: ChatCameraProps = 
     const renderVideo = () => {
         return (
             <View style={styles.pictureContainer}>
-                {videoPlayer && (
+                {video && videoPlayer && (
                     <VideoView
                         player={videoPlayer}
                         style={styles.fullscreenImage}
@@ -142,13 +181,29 @@ export const ChatCamera = ({ onPhotoTaken, onVideoRecorded }: ChatCameraProps = 
                     />
                 )}
                 <View style={styles.buttonContainer}>
-                    <TouchableOpacity onPress={() => setVideo(null)} style={styles.button}>
-                        <Feather name="video" size={20} color="#fff" style={styles.buttonIcon} />
+                    <TouchableOpacity
+                        onPress={() => setVideo(null)}
+                        style={styles.button}
+                    >
+                        <Feather
+                            name="video"
+                            size={20}
+                            color="#fff"
+                            style={styles.buttonIcon}
+                        />
                         <Text style={styles.buttonText}>Gravar novo vídeo</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={handleSendVideo} style={styles.button}>
-                        <AntDesign name="upload" size={20} color="#fff" style={styles.buttonIcon} />
+                    <TouchableOpacity
+                        onPress={handleSendVideo}
+                        style={styles.button}
+                    >
+                        <AntDesign
+                            name="upload"
+                            size={20}
+                            color="#fff"
+                            style={styles.buttonIcon}
+                        />
                         <Text style={styles.buttonText}>Enviar vídeo</Text>
                     </TouchableOpacity>
                 </View>
@@ -180,11 +235,17 @@ export const ChatCamera = ({ onPhotoTaken, onVideoRecorded }: ChatCameraProps = 
                         {mode === "picture" ? (
                             <AntDesign name="picture" size={32} color="white" />
                         ) : (
-                            <Feather name="video" size={32} color={recording ? "red" : "white"} />
+                            <Feather
+                                name="video"
+                                size={32}
+                                color={recording ? "red" : "white"}
+                            />
                         )}
                     </Pressable>
 
-                    <Pressable onPress={mode === "picture" ? takePicture : recordVideo}>
+                    <Pressable
+                        onPress={mode === "picture" ? takePicture : recordVideo}
+                    >
                         {({ pressed }) => (
                             <View
                                 style={[
@@ -210,7 +271,11 @@ export const ChatCamera = ({ onPhotoTaken, onVideoRecorded }: ChatCameraProps = 
                     </Pressable>
 
                     <Pressable onPress={toggleCameraFacing}>
-                        <FontAwesome6 name="rotate-left" size={32} color="white" />
+                        <FontAwesome6
+                            name="rotate-left"
+                            size={32}
+                            color="white"
+                        />
                     </Pressable>
                 </View>
             </View>
@@ -219,7 +284,11 @@ export const ChatCamera = ({ onPhotoTaken, onVideoRecorded }: ChatCameraProps = 
 
     return (
         <View style={styles.container}>
-            {photo ? renderPicture(photo) : video ? renderVideo() : renderCamera()}
+            {photo
+                ? renderPicture(photo)
+                : video
+                ? renderVideo()
+                : renderCamera()}
         </View>
     );
 };
@@ -231,21 +300,18 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
-
     message: {
         textAlign: "center",
         padding: 10,
         fontSize: 16,
         color: "#333",
     },
-
     pictureContainer: {
         flex: 1,
         backgroundColor: "black",
         width: "100%",
         height: "100%",
     },
-
     fullscreenImage: {
         position: "absolute",
         top: 0,
@@ -255,7 +321,6 @@ const styles = StyleSheet.create({
         width: "100%",
         height: "100%",
     },
-
     buttonContainer: {
         position: "absolute",
         bottom: 60,
@@ -264,7 +329,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
-
     button: {
         backgroundColor: "#3AC0A0",
         borderRadius: 4,
@@ -275,20 +339,16 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         flexDirection: "row",
     },
-
     buttonText: {
         color: "#fff",
         textTransform: "uppercase",
         textAlign: "center",
     },
-
     buttonIcon: {
         marginRight: 8,
     },
-
     cameraContainer: StyleSheet.absoluteFillObject,
     camera: StyleSheet.absoluteFillObject,
-
     shutterContainer: {
         position: "absolute",
         bottom: 44,
@@ -299,7 +359,6 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         paddingHorizontal: 30,
     },
-
     shutterBtn: {
         backgroundColor: "transparent",
         borderWidth: 5,
@@ -310,13 +369,11 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
-
     shutterBtnInner: {
         width: 70,
         height: 70,
         borderRadius: 50,
     },
-
     recordingIndicatorContainer: {
         position: "absolute",
         top: 60,
@@ -328,7 +385,6 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         borderRadius: 20,
     },
-
     recordingDot: {
         width: 10,
         height: 10,
@@ -336,7 +392,6 @@ const styles = StyleSheet.create({
         backgroundColor: "red",
         marginRight: 8,
     },
-
     recordingText: {
         color: "white",
         fontWeight: "600",

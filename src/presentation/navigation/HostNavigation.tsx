@@ -27,6 +27,7 @@ export function HostNavigation() {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Drawer = createDrawerNavigator();
 const BottomTab = createBottomTabNavigator();
+const ChatStackNav = createNativeStackNavigator();
 
 function PublicRoutes() {
     return (
@@ -45,35 +46,25 @@ function PublicRoutes() {
     );
 }
 
-function ProtectedRoutes() {
+function ChatStack() {
     return (
-        <Drawer.Navigator initialRouteName="ChatTabs">
-            <Drawer.Screen
-                name="ChatTabs"
-                component={ChatBottomTabs}
-                options={{ title: "Conversas" }}
+        <ChatStackNav.Navigator screenOptions={{ headerShown: false }}>
+            <ChatStackNav.Screen
+                name="ChatList"
+                component={ChatListScreen}
+                options={{ headerShown: false }}
             />
-            <Drawer.Screen
+            <ChatStackNav.Screen
                 name="Conversation"
                 component={ChatScreen}
                 options={{ title: "Conversa" }}
             />
-            <Drawer.Screen
-                name="CreateRoom"
-                component={CreateRoom}
-                options={{ title: "Criar Sala" }}
-            />
-            <Drawer.Screen
-                name="EnterRoom"
-                component={EnterRoom}
-                options={{ title: "Adentrar Sala" }}
-            />
-            <Drawer.Screen 
+            <ChatStackNav.Screen
                 name="Camera"
                 component={ChatCamera}
                 options={{ title: "Usar Câmera" }}
             />
-        </Drawer.Navigator>
+        </ChatStackNav.Navigator>
     );
 }
 
@@ -81,8 +72,8 @@ function ChatBottomTabs() {
     return (
         <BottomTab.Navigator screenOptions={{ headerShown: false }}>
             <BottomTab.Screen
-                name="Chats"
-                component={ChatListScreen}
+                name="ChatsTab"
+                component={ChatStack}
                 options={{
                     tabBarLabel: "Chats",
                 }}
@@ -95,5 +86,27 @@ function ChatBottomTabs() {
                 }}
             />
         </BottomTab.Navigator>
+    );
+}
+
+function ProtectedRoutes() {
+    return (
+        <Drawer.Navigator initialRouteName="ChatTabs">
+            <Drawer.Screen
+                name="ChatTabs"
+                component={ChatBottomTabs}
+                options={{ title: "Conversas" }}
+            />
+            <Drawer.Screen
+                name="CreateRoom"
+                component={CreateRoom}
+                options={{ title: "Criar Sala" }}
+            />
+            <Drawer.Screen
+                name="EnterRoom"
+                component={EnterRoom}
+                options={{ title: "Adentrar Sala" }}
+            />
+        </Drawer.Navigator>
     );
 }

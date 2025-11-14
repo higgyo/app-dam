@@ -1,21 +1,24 @@
 import Password from "../value-objects/Password";
+import * as Crypto from "expo-crypto";
 
 export default class Chat {
     private constructor(
+        readonly id: string,
         readonly name: string,
-        readonly id?: string,
-        readonly idUser?: string,
-        readonly imageUrl?: string,
-        readonly password?: Password,
+        readonly idUser: string,
+        readonly mediaUrl?: string,
+        readonly password?: Password
     ) {}
 
     static create(
         name: string,
-        id?: string,
-        idUser?: string,
-        imageUrl?: string,
-        password?: string
+        idUser: string,
+        mediaUrl?: string,
+        password?: Password,
+        id?: string
     ) {
-        return new Chat(name, id, idUser, imageUrl, password ? Password.create(password) : undefined)
+        const finalId = id?.length ? id : Crypto.randomUUID();
+
+        return new Chat(finalId, name, idUser, mediaUrl, password);
     }
 }
