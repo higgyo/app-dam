@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     View,
     Text,
@@ -7,156 +7,148 @@ import {
     ScrollView,
     StatusBar,
     StyleSheet,
-    Modal,
-    Image,
+    ActivityIndicator,
+    Alert,
+    Platform,
+    Keyboard,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
-import { ChatCamera } from "../chat_camera/ChatCamera";
-import { IChatRepository } from "../../../domain/interfaces/ichat-repository";
 import { useAuthContext } from "../../contexts/AuthContext";
+import { MessageServiceFactory } from "../../../infrastructure/factories/MessageServiceFactory";
+import Message from "../../../domain/entities/Message";
 
-interface ChatScreenProps {
-    chatRepository?: IChatRepository;
-    currentChatId?: string;
-}
+type ChatScreenRouteProp = RouteProp<
+    { Chat: { roomId: string; roomName: string } },
+    "Chat"
+>;
 
-type UiMessage = {
-    id: number;
-    text?: string;
-    sender: string;
-    type: "sent" | "received";
-    time: string;
-    mediaUrl?: string;
-};
-
-const ChatScreen: React.FC<ChatScreenProps> = ({
-    chatRepository,
-    currentChatId = "chat-1",
-}) => {
-    const [message, setMessage] = useState("");
-    const [messages, setMessages] = useState<UiMessage[]>([]);
-    const [showCamera, setShowCamera] = useState(false);
-
+const ChatScreen = () => {
+    const route = useRoute<ChatScreenRouteProp>();
+    const navigation = useNavigation();
     const { currentUser } = useAuthContext();
+    const scrollViewRef = useRef<ScrollView>(null);
+    const insets = useSafeAreaInsets();
 
-    const currentUserId = currentUser?.id ?? "";
+    const [message, setMessage] = useState("");
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [sending, setSending] = useState(false);
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-    const handleAppendMessage = (partial: Omit<UiMessage, "id" | "time">) => {
-        const newMessage: UiMessage = {
-            id: messages.length + 1,
-            time: "agora",
-            ...partial,
+    const roomId = route.params?.roomId;
+    const roomName = route.params?.roomName || "Chat";
+
+    const sendMessageUseCase = MessageServiceFactory.makeSendMessageUseCase();
+    const getMessagesUseCase = MessageServiceFactory.makeGetMessagesUseCase();
+    const messageRepository = MessageServiceFactory.getMessageRepository();
+
+    useEffect(() => {
+        if (!roomId) {
+            Alert.alert("Erro", "ID da sala não fornecido");
+            navigation.goBack();
+            return;
+        }
+
+        loadMessages();
+
+        // Subscribe to real-time messages
+        const unsubscribe = messageRepository.subscribeToMessages(
+            roomId,
+            (newMessage) => {
+                setMessages((prev) => [...prev, newMessage]);
+                setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 100);
+            }
+        );
+
+        // Keyboard listeners
+        const keyboardWillShow = Keyboard.addListener(
+            Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+            (e) => {
+                setKeyboardHeight(e.endCoordinates.height);
+                setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 100);
+            }
+        );
+
+        const keyboardWillHide = Keyboard.addListener(
+            Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+            () => {
+                setKeyboardHeight(0);
+            }
+        );
+
+        return () => {
+            unsubscribe();
+            keyboardWillShow.remove();
+            keyboardWillHide.remove();
         };
-        setMessages((prev) => [...prev, newMessage]);
+    }, [roomId]);
+
+    const loadMessages = async () => {
+        try {
+            setLoading(true);
+            const loadedMessages = await getMessagesUseCase.execute({ roomId });
+            setMessages(loadedMessages);
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: false });
+            }, 100);
+        } catch (error: any) {
+            Alert.alert("Erro", error.message || "Falha ao carregar mensagens");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const sendMessage = async () => {
-        const trimmed = message.trim();
-        if (!trimmed) return;
+        if (!message.trim() || !currentUser || sending) return;
 
-        handleAppendMessage({
-            text: trimmed,
-            sender: "Nicolas",
-            type: "sent",
-        });
-        setMessage("");
-
-        if (chatRepository) {
-            try {
-                await chatRepository.sendMessage(
-                    trimmed,
-                    currentUserId,
-                    currentChatId
-                );
-            } catch {}
+        try {
+            setSending(true);
+            await sendMessageUseCase.execute({
+                content: message.trim(),
+                roomId: roomId,
+                senderId: currentUser.id!,
+                type: "text",
+            });
+            setMessage("");
+        } catch (error: any) {
+            Alert.alert("Erro", error.message || "Falha ao enviar mensagem");
+        } finally {
+            setSending(false);
         }
     };
 
-    const handlePhotoTaken = async (uri: string) => {
-        handleAppendMessage({
-            sender: "Nicolas",
-            type: "sent",
-            mediaUrl: uri,
+    const formatTime = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
         });
-
-        if (chatRepository) {
-            try {
-                await chatRepository.sendMessage(
-                    "",
-                    currentUserId,
-                    currentChatId,
-                    uri
-                );
-            } catch {}
-        }
     };
 
-    const handleVideoRecorded = async (uri: string) => {
-        handleAppendMessage({
-            sender: "Nicolas",
-            type: "sent",
-            mediaUrl: uri,
-        });
-
-        if (chatRepository) {
-            try {
-                await chatRepository.sendMessage(
-                    "",
-                    currentUserId,
-                    currentChatId,
-                    uri
-                );
-            } catch {}
-        }
-    };
-    useEffect(() => {
-        if (!chatRepository) return;
-
-        let isMounted = true;
-
-        (async () => {
-            try {
-                const domainMessages = await chatRepository.getMessagesByChat(
-                    currentChatId
-                );
-
-                if (!isMounted) return;
-
-                const uiMessages: UiMessage[] = domainMessages.map(
-                    (domainMessage, index) => ({
-                        id: index + 1,
-                        text:
-                            (domainMessage as any).message ??
-                            (domainMessage as any).text ??
-                            "",
-                        sender:
-                            (domainMessage as any).idUser === currentUserId
-                                ? "Nicolas"
-                                : "Outro usuário",
-                        type:
-                            (domainMessage as any).idUser === currentUserId
-                                ? "sent"
-                                : "received",
-                        time: "agora",
-                        mediaUrl: (domainMessage as any).mediaUrl,
-                    })
-                );
-
-                setMessages(uiMessages);
-            } catch (error) {}
-        })();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [chatRepository, currentChatId, currentUserId]);
+    if (loading) {
+        return (
+            <View style={[styles.container, styles.centerContent]}>
+                <ActivityIndicator size="large" color="#007AFF" />
+                <Text style={styles.loadingText}>Carregando mensagens...</Text>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
             <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton}>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => navigation.goBack()}
+                >
                     <MaterialIcons
                         name="keyboard-arrow-left"
                         size={24}
@@ -164,9 +156,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
                     />
                 </TouchableOpacity>
                 <View style={styles.headerTitle}>
-                    <Text style={styles.titleText}>
-                        Mais que amigos, Friends
-                    </Text>
+                    <Text style={styles.titleText}>{roomName}</Text>
                 </View>
                 <TouchableOpacity style={styles.profileIcon}>
                     <FontAwesome name="user" size={24} color="#B4DBFF" />
@@ -174,63 +164,84 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
             </View>
 
             <ScrollView
+                ref={scrollViewRef}
                 style={styles.messagesContainer}
-                contentContainerStyle={styles.messagesContent}
+                contentContainerStyle={[
+                    styles.messagesContent,
+                    {
+                        paddingBottom:
+                            keyboardHeight > 0
+                                ? keyboardHeight - insets.bottom
+                                : 16,
+                    },
+                ]}
+                onContentSizeChange={() =>
+                    scrollViewRef.current?.scrollToEnd({ animated: true })
+                }
+                keyboardShouldPersistTaps="handled"
             >
-                {messages.map((msg) => (
-                    <View key={msg.id} style={styles.messageContainer}>
-                        {msg.type === "received" ? (
-                            <View style={styles.receivedMessageRow}>
-                                <View style={styles.receivedBubble}>
-                                    {msg.sender && (
-                                        <Text style={styles.senderName}>
-                                            {msg.sender}
-                                        </Text>
-                                    )}
-                                    {msg.text ? (
-                                        <Text style={styles.receivedText}>
-                                            {msg.text}
-                                        </Text>
-                                    ) : null}
-                                    {msg.mediaUrl ? (
-                                        <Image
-                                            source={{ uri: msg.mediaUrl }}
-                                            style={styles.messageImage}
-                                        />
-                                    ) : null}
-                                </View>
-                            </View>
-                        ) : (
-                            <View style={styles.sentMessageRow}>
-                                <View style={styles.sentBubble}>
-                                    {msg.text ? (
-                                        <Text style={styles.sentText}>
-                                            {msg.text}
-                                        </Text>
-                                    ) : null}
-                                    {msg.mediaUrl ? (
-                                        <Image
-                                            source={{ uri: msg.mediaUrl }}
-                                            style={styles.messageImage}
-                                        />
-                                    ) : null}
-                                </View>
-                            </View>
-                        )}
+                {messages.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>
+                            Nenhuma mensagem ainda
+                        </Text>
+                        <Text style={styles.emptySubText}>
+                            Seja o primeiro a enviar uma mensagem!
+                        </Text>
                     </View>
-                ))}
+                ) : (
+                    messages.map((msg) => {
+                        const isSent = msg.senderId === currentUser?.id;
+                        return (
+                            <View key={msg.id} style={styles.messageContainer}>
+                                {!isSent ? (
+                                    <View style={styles.receivedMessageRow}>
+                                        <View style={styles.receivedBubble}>
+                                            <Text style={styles.receivedText}>
+                                                {msg.content}
+                                            </Text>
+                                            <Text style={styles.timeText}>
+                                                {formatTime(msg.createdAt)}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                ) : (
+                                    <View style={styles.sentMessageRow}>
+                                        <View style={styles.sentBubble}>
+                                            <Text style={styles.sentText}>
+                                                {msg.content}
+                                            </Text>
+                                            <Text style={styles.sentTimeText}>
+                                                {formatTime(msg.createdAt)}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                )}
+                            </View>
+                        );
+                    })
+                )}
             </ScrollView>
 
-            <View style={styles.inputContainer}>
+            <View
+                style={[
+                    styles.inputContainer,
+                    keyboardHeight > 0 && {
+                        position: "absolute",
+                        bottom: keyboardHeight - insets.bottom,
+                        left: 0,
+                        right: 0,
+                    },
+                    {
+                        paddingBottom:
+                            keyboardHeight > 0
+                                ? 12
+                                : Math.max(insets.bottom, 8),
+                    },
+                ]}
+            >
                 <TouchableOpacity style={styles.plusButton}>
                     <FontAwesome name="plus" size={24} color="#007AFF" />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.cameraButton}
-                    onPress={() => setShowCamera(true)}
-                >
-                    <FontAwesome name="camera" size={22} color="#007AFF" />
                 </TouchableOpacity>
 
                 <View style={styles.inputWrapper}>
@@ -242,68 +253,116 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
                         style={styles.textInput}
                         multiline={false}
                         onSubmitEditing={sendMessage}
+                        editable={!sending}
+                        returnKeyType="send"
                     />
                 </View>
 
                 <TouchableOpacity
                     onPress={sendMessage}
-                    style={styles.sendButton}
+                    style={[
+                        styles.sendButton,
+                        (sending || !message.trim()) &&
+                            styles.sendButtonDisabled,
+                    ]}
+                    disabled={sending || !message.trim()}
                 >
-                    <FontAwesome name="send" size={16} color="white" />
+                    {sending ? (
+                        <ActivityIndicator size="small" color="white" />
+                    ) : (
+                        <FontAwesome name="send" size={16} color="white" />
+                    )}
                 </TouchableOpacity>
             </View>
-
-            <Modal visible={showCamera} animationType="slide">
-                <ChatCamera
-                    onPhotoTaken={handlePhotoTaken}
-                    onVideoRecorded={handleVideoRecorded}
-                    onClose={() => setShowCamera(false)}
-                />
-            </Modal>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: "#f0f0f0",
+    },
     container: {
         flex: 1,
-        backgroundColor: "#fff",
+        backgroundColor: "#f0f0f0",
+    },
+    flex: {
+        flex: 1,
+    },
+    centerContent: {
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 16,
+        color: "#666",
     },
     header: {
+        backgroundColor: "white",
         flexDirection: "row",
         alignItems: "center",
         paddingHorizontal: 16,
         paddingVertical: 12,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: "#ddd",
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 3,
     },
     backButton: {
-        paddingRight: 8,
-        paddingVertical: 4,
+        marginRight: 16,
+    },
+    backArrow: {
+        fontSize: 24,
+        color: "#007AFF",
+        fontWeight: "300",
     },
     headerTitle: {
         flex: 1,
-        alignItems: "center",
     },
     titleText: {
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: "600",
         color: "#000",
     },
     profileIcon: {
         width: 32,
         height: 32,
+        backgroundColor: "#e3f2fd",
         borderRadius: 16,
-        backgroundColor: "#E5F2FF",
         alignItems: "center",
         justifyContent: "center",
     },
+    profileIconText: {
+        fontSize: 16,
+    },
     messagesContainer: {
         flex: 1,
-        paddingHorizontal: 16,
     },
     messagesContent: {
-        paddingVertical: 16,
+        padding: 16,
+        flexGrow: 1,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingVertical: 40,
+    },
+    emptyText: {
+        fontSize: 18,
+        fontWeight: "600",
+        color: "#666",
+        marginBottom: 8,
+    },
+    emptySubText: {
+        fontSize: 14,
+        color: "#999",
     },
     messageContainer: {
         marginBottom: 8,
@@ -317,71 +376,93 @@ const styles = StyleSheet.create({
         justifyContent: "flex-end",
     },
     receivedBubble: {
-        maxWidth: "80%",
-        backgroundColor: "#F1F0F0",
-        borderRadius: 16,
+        backgroundColor: "white",
+        borderRadius: 18,
         paddingHorizontal: 12,
         paddingVertical: 8,
+        maxWidth: 280,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
     },
     sentBubble: {
-        maxWidth: "80%",
         backgroundColor: "#007AFF",
-        borderRadius: 16,
+        borderRadius: 18,
         paddingHorizontal: 12,
         paddingVertical: 8,
+        maxWidth: 280,
     },
     senderName: {
-        fontSize: 11,
+        fontSize: 13,
         fontWeight: "600",
-        color: "#555",
+        color: "#666",
         marginBottom: 2,
     },
     receivedText: {
-        fontSize: 14,
+        fontSize: 16,
         color: "#000",
+        lineHeight: 20,
     },
     sentText: {
-        fontSize: 14,
-        color: "#fff",
+        fontSize: 16,
+        color: "white",
+        lineHeight: 20,
     },
-    messageImage: {
-        marginTop: 6,
-        borderRadius: 10,
-        width: 200,
-        height: 200,
-        backgroundColor: "#000",
+    timeText: {
+        fontSize: 11,
+        color: "#999",
+        marginTop: 4,
+        alignSelf: "flex-end",
+    },
+    sentTimeText: {
+        fontSize: 11,
+        color: "#E5F1FF",
+        marginTop: 4,
+        alignSelf: "flex-end",
     },
     inputContainer: {
+        backgroundColor: "white",
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: "#ddd",
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderTopWidth: 1,
+        borderTopColor: "#e0e0e0",
     },
     plusButton: {
-        marginRight: 8,
+        marginRight: 12,
     },
-    cameraButton: {
-        marginRight: 8,
+    plusIcon: {
+        fontSize: 20,
+        color: "#007AFF",
     },
     inputWrapper: {
         flex: 1,
-        backgroundColor: "#F3F3F3",
+        backgroundColor: "#f5f5f5",
         borderRadius: 20,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
     },
     textInput: {
-        fontSize: 14,
+        fontSize: 16,
         color: "#000",
     },
     sendButton: {
-        marginLeft: 8,
+        height: 42,
+        width: 42,
         backgroundColor: "#007AFF",
-        borderRadius: 20,
-        paddingHorizontal: 14,
-        paddingVertical: 8,
+        borderRadius: 42,
+        alignItems: "center",
+        justifyContent: "center",
+        marginLeft: 12,
+    },
+    sendButtonDisabled: {
+        backgroundColor: "#B4DBFF",
     },
 });
 

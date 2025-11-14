@@ -1,11 +1,21 @@
-import { createContext, ReactNode, useContext, useState } from "react";
+import {
+    createContext,
+    ReactNode,
+    useContext,
+    useEffect,
+    useState,
+} from "react";
 import User from "../../domain/entities/User";
 import { LoginUser } from "../../application/use-cases/LoginUseCase";
 import { RegisterUserUseCase } from "../../application/use-cases/RegisterUseCase";
 import { UpdateUserUseCase } from "../../application/use-cases/UpdateUserUseCase";
 import { DeleteUserUseCase } from "../../application/use-cases/DeleteUserUseCase";
 import { FindUserUseCase } from "../../application/use-cases/FindUserUseCase";
-import { MockUserRepository } from "../../infrastructure/repositories/mock-user-repository";
+import { UserRepository } from "../../infrastructure/repositories/user-repository";
+import { AxiosHttpClient } from "../../infrastructure/http/axios-http-client";
+import { LogoutUser } from "../../application/use-cases/LogoutUserUseCase";
+import { supabase } from "../../infrastructure/supabase";
+import { VerifyAuthenticationUseCase } from "../../application/use-cases/VerifyAuthenticationUseCase";
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -13,13 +23,19 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLogged, setIsLogged] = useState(false);
 
+    const httpClient = new AxiosHttpClient();
+
     // Inicializar repositório e use cases
-    const userRepository = new MockUserRepository();
-    const loginUseCase = new LoginUser(userRepository);
+    const userRepository = new UserRepository(httpClient);
     const registerUseCase = new RegisterUserUseCase(userRepository);
+    const loginUseCase = new LoginUser(userRepository);
+    const logoutUseCase = new LogoutUser(userRepository);
     const updateUserUseCase = new UpdateUserUseCase(userRepository);
     const deleteUserUseCase = new DeleteUserUseCase(userRepository);
     const findUserUseCase = new FindUserUseCase(userRepository);
+    const verifyAuthentication = new VerifyAuthenticationUseCase(
+        userRepository
+    );
 
     async function login(email: string, password: string): Promise<void> {
         try {
@@ -85,9 +101,25 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
     }
 
     function logout() {
-        setCurrentUser(null);
-        setIsLogged(false);
+        try {
+            logoutUseCase.execute();
+            setCurrentUser(null);
+            setIsLogged(false);
+        } catch (error) {
+            throw error;
+        }
     }
+
+    useEffect(() => {
+        (async () => {
+            const user = await verifyAuthentication.execute();
+
+            if (user) {
+                setCurrentUser(user);
+                setIsLogged(true);
+            }
+        })();
+    }, []);
 
     return (
         <AuthContext.Provider

@@ -1,6 +1,5 @@
-import Chat from "../../../domain/entities/Chat";
+import Room from "../../../domain/entities/Room";
 import InvalidPasswordError from "../../../domain/errors/InvalidPasswordError";
-import Password from "../../../domain/value-objects/Password";
 
 jest.mock("../../../domain/value-objects/Password", () => {
     return {
@@ -20,26 +19,25 @@ describe("Chat", () => {
             name: "Tech Talk",
             id: "chat123",
             idUser: "user456",
-            mediaUrl: "http://example.com/image.jpg",
+            imageUrl: "http://example.com/image.jpg",
             password: "validPassword123",
         };
 
-        const password = Password.create(chatData.password);
-
-        const chat = Chat.create(
+        // Criar o chat com uma senha válida (mas ignorando a validação da senha)
+        const chat = Room.create(
             chatData.name,
             chatData.id,
             chatData.idUser,
-            chatData.mediaUrl,
-            password
+            chatData.imageUrl,
+            chatData.password
         );
 
         // Verificar se a instância é de Chat
-        expect(chat).toBeInstanceOf(Chat);
+        expect(chat).toBeInstanceOf(Room);
         expect(chat.name).toBe(chatData.name);
         expect(chat.id).toBe(chatData.id);
         expect(chat.idUser).toBe(chatData.idUser);
-        expect(chat.mediaUrl).toBe(chatData.mediaUrl);
+        expect(chat.imageUrl).toBe(chatData.imageUrl);
         expect(chat.password).toBeDefined();
     });
 
@@ -48,22 +46,22 @@ describe("Chat", () => {
             name: "General Chat",
             id: "chat456",
             idUser: "user789",
-            mediaUrl: "http://example.com/image2.jpg",
+            imageUrl: "http://example.com/image2.jpg",
         };
 
-        const chat = Chat.create(
+        const chat = Room.create(
             chatData.name,
             chatData.id,
             chatData.idUser,
-            chatData.mediaUrl
+            chatData.imageUrl
         );
 
         // Verificar se a instância é de Chat
-        expect(chat).toBeInstanceOf(Chat);
+        expect(chat).toBeInstanceOf(Room);
         expect(chat.name).toBe(chatData.name);
         expect(chat.id).toBe(chatData.id);
         expect(chat.idUser).toBe(chatData.idUser);
-        expect(chat.mediaUrl).toBe(chatData.mediaUrl);
+        expect(chat.imageUrl).toBe(chatData.imageUrl);
 
         // Verificar se o password é undefined
         expect(chat.password).toBeUndefined(); // Já que a senha não foi fornecida

@@ -2,24 +2,32 @@ import * as Crypto from "expo-crypto";
 
 export default class Message {
     private constructor(
-        readonly id: string,
-        readonly message: string,
-        readonly date: string,
-        readonly userId: string,
-        readonly chatId: string,
-        readonly mediaUrl?: string
+        readonly content: string,
+        readonly roomId: string,
+        readonly senderId: string,
+        readonly createdAt: string,
+        readonly type: string = "text",
+        readonly fileUrl?: string,
+        readonly id?: string
     ) {}
 
-    static create(
-        message: string,
-        date: string,
-        userId: string,
-        chatId: string,
-        mediaUrl?: string,
-        id?: string
-    ) {
-        const finalId = id?.length ? id : Crypto.randomUUID();
-
-        return new Message(finalId, message, date, userId, chatId, mediaUrl);
+    static create(params: {
+        content: string;
+        roomId: string;
+        senderId: string;
+        createdAt: string;
+        type?: string;
+        fileUrl?: string;
+        id?: string;
+    }) {
+        return new Message(
+            params.content,
+            params.roomId,
+            params.senderId,
+            params.createdAt,
+            params.type || "text",
+            params.fileUrl,
+            params.id
+        );
     }
 }

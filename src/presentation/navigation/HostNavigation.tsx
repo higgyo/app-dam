@@ -48,11 +48,11 @@ function PublicRoutes() {
 
 function ChatStack() {
     return (
-        <ChatStackNav.Navigator screenOptions={{ headerShown: false }}>
-            <ChatStackNav.Screen
-                name="ChatList"
-                component={ChatListScreen}
-                options={{ headerShown: false }}
+        <Drawer.Navigator initialRouteName="ChatTabs">
+            <Drawer.Screen
+                name="ChatTabs"
+                component={GroupsListScreen}
+                options={{ title: "Conversas" }}
             />
             <ChatStackNav.Screen
                 name="Conversation"
@@ -64,7 +64,7 @@ function ChatStack() {
                 component={ChatCamera}
                 options={{ title: "Usar Câmera" }}
             />
-        </ChatStackNav.Navigator>
+        </Drawer.Navigator>
     );
 }
 
