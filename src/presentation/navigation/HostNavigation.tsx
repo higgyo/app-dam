@@ -13,6 +13,7 @@ import { EnterRoom } from "../screens/enterroom/EnterRoom";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { RootStackParamList } from "./types";
 import { LogoutScreen } from "../screens/logout/LogoutScreen";
+import MapScreen from "../screens/maps/MapScreen";
 
 export function HostNavigation() {
     const auth = useAuthContext();
@@ -131,6 +132,14 @@ function ProtectedRoutes() {
                     drawerIcon: ({ color, size }) => (
                         <MaterialIcons name="login" size={size} color={color} />
                     ),
+                }}
+            />
+
+            <Drawer.Screen 
+                name="Map"
+                component={MapScreen}
+                options={{
+                    title: "Mapa"
                 }}
             />
 
