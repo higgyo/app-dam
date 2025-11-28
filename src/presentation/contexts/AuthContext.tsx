@@ -16,17 +16,39 @@ import { AxiosHttpClient } from "../../infrastructure/http/axios-http-client";
 import { LogoutUser } from "../../application/use-cases/LogoutUserUseCase";
 import { supabase } from "../../infrastructure/supabase";
 import { VerifyAuthenticationUseCase } from "../../application/use-cases/VerifyAuthenticationUseCase";
+import { CacheInitializer } from "../../infrastructure/factories/CacheInitializer";
+import { CachedUserRepository, SQLiteDatabase } from "../../infrastructure/cache";
+import { IUserRepository } from "../../domain/interfaces/iuser-repository";
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthContextProvider({ children }: { children: ReactNode }) {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLogged, setIsLogged] = useState(false);
+    const [isCacheInitialized, setIsCacheInitialized] = useState(false);
 
     const httpClient = new AxiosHttpClient();
 
     // Inicializar repositório e use cases
-    const userRepository = new UserRepository(httpClient);
+    const remoteUserRepository = new UserRepository(httpClient);
+    const [userRepository, setUserRepository] = useState<IUserRepository>(remoteUserRepository);
+
+    // Initialize cache and update repository
+    useEffect(() => {
+        (async () => {
+            try {
+                await CacheInitializer.initialize();
+                const sqliteDb = SQLiteDatabase.getInstance();
+                const cachedRepo = new CachedUserRepository(remoteUserRepository, sqliteDb);
+                setUserRepository(cachedRepo);
+                setIsCacheInitialized(true);
+            } catch (error) {
+                console.error("Failed to initialize cache:", error);
+                setIsCacheInitialized(true); // Continue without cache
+            }
+        })();
+    }, []);
+
     const registerUseCase = new RegisterUserUseCase(userRepository);
     const loginUseCase = new LoginUser(userRepository);
     const logoutUseCase = new LogoutUser(userRepository);
@@ -111,6 +133,8 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
     }
 
     useEffect(() => {
+        if (!isCacheInitialized) return;
+        
         (async () => {
             const user = await verifyAuthentication.execute();
 
@@ -119,7 +143,7 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
                 setIsLogged(true);
             }
         })();
-    }, []);
+    }, [isCacheInitialized]);
 
     return (
         <AuthContext.Provider
