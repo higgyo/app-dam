@@ -1,5 +1,4 @@
 import { StyleSheet, View, Text } from 'react-native';
-import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
 import { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -19,24 +18,14 @@ export default function MapScreen() {
 
     useFocusEffect(
         useCallback(() => {
-            async function getCurrentLocation() {
-                let { status } = await Location.requestForegroundPermissionsAsync();
-                if (status !== 'granted') {
-                    setError("Permissão para acessar localização foi negada.");
-                    return;
-                }
+            if(!auth.currentUser || !auth.currentUser.location) return;
 
-                let location = await Location.getCurrentPositionAsync();
-
-                setRegion({
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude,
-                    latitudeDelta: 0.005,
-                    longitudeDelta: 0.005,
-                });
-            }
-
-            getCurrentLocation();
+            setRegion({
+                latitude: auth.currentUser.location.latitude,
+                longitude: auth.currentUser.location.longitude,
+                latitudeDelta: 0.05,
+                longitudeDelta: 0.05
+            })
         }, [])
     );
 
