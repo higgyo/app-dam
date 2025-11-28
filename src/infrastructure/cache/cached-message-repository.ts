@@ -2,6 +2,7 @@ import Message from "../../domain/entities/Message";
 import { IMessageRepository } from "../../domain/interfaces/imessage-repository";
 import { MessageType } from "../../shared/types";
 import { SQLiteDatabase } from "./sqlite-database";
+import * as Crypto from "expo-crypto";
 
 interface CachedMessage {
     id: string;
@@ -55,7 +56,7 @@ export class CachedMessageRepository implements IMessageRepository {
             return message;
         } catch {
             // If remote fails, save locally as unsynced (for offline support)
-            const localId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const localId = `local_${Crypto.randomUUID()}`;
             const createdAt = new Date().toISOString();
 
             await db.runAsync(
@@ -209,7 +210,7 @@ export class CachedMessageRepository implements IMessageRepository {
                 );
             } catch {
                 // Keep unsynced if remote still fails
-                console.log(`Failed to sync message ${msg.id}, will retry later`);
+                console.error(`Failed to sync message ${msg.id}, will retry later`);
             }
         }
     }

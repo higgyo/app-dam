@@ -13,6 +13,15 @@ interface CachedUser {
     last_longitude: number | null;
 }
 
+/**
+ * Placeholder password for cached users.
+ * The User entity requires a password, but we don't store actual passwords in the cache
+ * for security reasons. This placeholder is used only to satisfy the entity constructor
+ * and is never used for authentication. All actual authentication is done via the
+ * remote repository with real credentials.
+ */
+const CACHED_USER_PLACEHOLDER_PASSWORD = "CachedUserPlaceholder#123";
+
 export class CachedUserRepository implements IUserRepository {
     constructor(
         private readonly remoteRepository: IUserRepository,
@@ -49,14 +58,7 @@ export class CachedUserRepository implements IUserRepository {
             );
 
             if (cachedUser) {
-                return User.create({
-                    id: cachedUser.id,
-                    name: cachedUser.name,
-                    email: cachedUser.email,
-                    password: "Cached#123", // Placeholder - password isn't stored
-                    latitude: cachedUser.last_latitude || undefined,
-                    longitude: cachedUser.last_longitude || undefined,
-                });
+                return this.createUserFromCache(cachedUser);
             }
 
             throw new Error("Usuário não está autenticado");
@@ -105,14 +107,7 @@ export class CachedUserRepository implements IUserRepository {
 
             if (!cachedUser) return null;
 
-            return User.create({
-                id: cachedUser.id,
-                name: cachedUser.name,
-                email: cachedUser.email,
-                password: "Cached#123", // Placeholder - password isn't stored
-                latitude: cachedUser.last_latitude || undefined,
-                longitude: cachedUser.last_longitude || undefined,
-            });
+            return this.createUserFromCache(cachedUser);
         }
     }
 
@@ -138,6 +133,21 @@ export class CachedUserRepository implements IUserRepository {
         );
     }
 
+    /**
+     * Creates a User entity from cached data.
+     * Uses a placeholder password since actual passwords are not stored in the cache.
+     */
+    private createUserFromCache(cachedUser: CachedUser): User {
+        return User.create({
+            id: cachedUser.id,
+            name: cachedUser.name,
+            email: cachedUser.email,
+            password: CACHED_USER_PLACEHOLDER_PASSWORD,
+            latitude: cachedUser.last_latitude || undefined,
+            longitude: cachedUser.last_longitude || undefined,
+        });
+    }
+
     async getCachedUser(userId: string): Promise<User | null> {
         const db = this.sqliteDb.getDatabase();
         
@@ -148,13 +158,6 @@ export class CachedUserRepository implements IUserRepository {
 
         if (!cachedUser) return null;
 
-        return User.create({
-            id: cachedUser.id,
-            name: cachedUser.name,
-            email: cachedUser.email,
-            password: "Cached#123", // Placeholder
-            latitude: cachedUser.last_latitude || undefined,
-            longitude: cachedUser.last_longitude || undefined,
-        });
+        return this.createUserFromCache(cachedUser);
     }
 }
