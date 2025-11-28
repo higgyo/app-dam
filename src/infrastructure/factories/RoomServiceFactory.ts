@@ -5,12 +5,15 @@ import { CreateChatUseCase } from "../../application/use-cases/CreateRoomUseCase
 import { EnterRoomUseCase } from "../../application/use-cases/EnterRoomUseCase";
 import { ListRoomsUseCase } from "../../application/use-cases/ListRoomsUseCase";
 import { SQLiteCacheStorage } from "../cache";
+import { CACHE_CONFIG } from "../cache/cache-config";
 import { IRoomRepository } from "../../domain/interfaces/iroom-repository";
 
 export class RoomServiceFactory {
     private static httpClient = new AxiosHttpClient();
     private static baseRoomRepository = new RoomRepository(this.httpClient);
-    private static cacheStorage = new SQLiteCacheStorage("rooms_cache.db");
+    private static cacheStorage = new SQLiteCacheStorage(
+        CACHE_CONFIG.ROOMS_DATABASE
+    );
     private static roomRepository: IRoomRepository = new CachedRoomRepository(
         this.baseRoomRepository,
         this.cacheStorage

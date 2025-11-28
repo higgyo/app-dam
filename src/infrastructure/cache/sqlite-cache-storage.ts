@@ -18,7 +18,10 @@ export class SQLiteCacheStorage implements ICacheStorage {
             this.initPromise = this.initializeDatabase();
         }
         await this.initPromise;
-        return this.db!;
+        if (!this.db) {
+            throw new Error("Database not initialized");
+        }
+        return this.db;
     }
 
     private async initializeDatabase(): Promise<void> {

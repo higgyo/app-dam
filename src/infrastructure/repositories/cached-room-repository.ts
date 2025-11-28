@@ -2,8 +2,8 @@ import Room from "../../domain/entities/Room";
 import Password from "../../domain/value-objects/Password";
 import { IRoomRepository } from "../../domain/interfaces/iroom-repository";
 import { ICacheStorage } from "../cache/icache-storage";
+import { CACHE_CONFIG } from "../cache/cache-config";
 
-const CACHE_TTL_SECONDS = 300; // 5 minutes cache TTL
 const ROOMS_LIST_CACHE_KEY = "rooms:list";
 
 export class CachedRoomRepository implements IRoomRepository {
@@ -58,7 +58,11 @@ export class CachedRoomRepository implements IRoomRepository {
             idUser: room.idUser,
         }));
 
-        await this.cache.set(ROOMS_LIST_CACHE_KEY, roomsData, CACHE_TTL_SECONDS);
+        await this.cache.set(
+            ROOMS_LIST_CACHE_KEY,
+            roomsData,
+            CACHE_CONFIG.DEFAULT_TTL_SECONDS
+        );
 
         return rooms;
     }

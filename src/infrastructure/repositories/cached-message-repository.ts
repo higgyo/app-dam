@@ -1,9 +1,8 @@
 import Message from "../../domain/entities/Message";
 import { IMessageRepository } from "../../domain/interfaces/imessage-repository";
 import { ICacheStorage } from "../cache/icache-storage";
+import { CACHE_CONFIG } from "../cache/cache-config";
 import { MessageType } from "../../shared/types";
-
-const CACHE_TTL_SECONDS = 300; // 5 minutes cache TTL
 
 export class CachedMessageRepository implements IMessageRepository {
     constructor(
@@ -76,7 +75,11 @@ export class CachedMessageRepository implements IMessageRepository {
             fileUrl: msg.fileUrl,
         }));
 
-        await this.cache.set(cacheKey, messagesData, CACHE_TTL_SECONDS);
+        await this.cache.set(
+            cacheKey,
+            messagesData,
+            CACHE_CONFIG.DEFAULT_TTL_SECONDS
+        );
 
         return messages;
     }
