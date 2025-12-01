@@ -11,11 +11,9 @@ import { RegisterUserUseCase } from "../../application/use-cases/RegisterUseCase
 import { UpdateUserUseCase } from "../../application/use-cases/UpdateUserUseCase";
 import { DeleteUserUseCase } from "../../application/use-cases/DeleteUserUseCase";
 import { FindUserUseCase } from "../../application/use-cases/FindUserUseCase";
-import { UserRepository } from "../../infrastructure/repositories/user-repository";
-import { AxiosHttpClient } from "../../infrastructure/http/axios-http-client";
 import { LogoutUser } from "../../application/use-cases/LogoutUserUseCase";
-import { supabase } from "../../infrastructure/supabase";
 import { VerifyAuthenticationUseCase } from "../../application/use-cases/VerifyAuthenticationUseCase";
+import { UserServiceFactory } from "../../infrastructure/factories/UserServiceFactory";
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -23,10 +21,8 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLogged, setIsLogged] = useState(false);
 
-    const httpClient = new AxiosHttpClient();
-
-    // Inicializar repositório e use cases
-    const userRepository = new UserRepository(httpClient);
+    // Use cached repository from factory
+    const userRepository = UserServiceFactory.getUserRepository();
     const registerUseCase = new RegisterUserUseCase(userRepository);
     const loginUseCase = new LoginUser(userRepository);
     const logoutUseCase = new LogoutUser(userRepository);

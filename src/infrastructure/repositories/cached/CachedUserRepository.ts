@@ -1,0 +1,148 @@
+import User from "../../../domain/entities/User";
+import { IUserRepository } from "../../../domain/interfaces/iuser-repository";
+import Email from "../../../domain/value-objects/Email";
+import Password from "../../../domain/value-objects/Password";
+import { networkService } from "../../services/NetworkService";
+import { syncService } from "../../services/SyncService";
+import { SqliteUserRepository } from "../sqlite/SqliteUserRepository";
+
+export class CachedUserRepository implements IUserRepository {
+    constructor(
+        private readonly remoteRepository: IUserRepository,
+        private readonly localRepository: SqliteUserRepository = new SqliteUserRepository()
+    ) {}
+
+    async login(email: Email, password: Password): Promise<User> {
+        // Login always requires online connection since it needs to authenticate with Supabase
+        if (!networkService.isOnline()) {
+            throw new Error(
+                "Não é possível fazer login offline. Verifique sua conexão."
+            );
+        }
+
+        const user = await this.remoteRepository.login(email, password);
+
+        // Cache the user locally (without password)
+        await this.localRepository.saveUser(user);
+
+        return user;
+    }
+
+    async verifyAuthentication(): Promise<User> {
+        if (networkService.isOnline()) {
+            try {
+                const user = await this.remoteRepository.verifyAuthentication();
+                // Cache the user locally
+                await this.localRepository.saveUser(user);
+                return user;
+            } catch {
+                // If online verification fails, try local cache
+                const cachedUsers = await this.localRepository.getAllUsers();
+                if (cachedUsers.length > 0) {
+                    return cachedUsers[0];
+                }
+                throw new Error("Usuário não está autenticado");
+            }
+        }
+
+        // Offline: return cached user if available
+        const cachedUsers = await this.localRepository.getAllUsers();
+        if (cachedUsers.length > 0) {
+            return cachedUsers[0];
+        }
+
+        throw new Error(
+            "Não é possível verificar autenticação offline sem dados em cache"
+        );
+    }
+
+    async register(
+        username: string,
+        email: Email,
+        password: Password
+    ): Promise<User> {
+        // Registration always requires online connection
+        if (!networkService.isOnline()) {
+            throw new Error(
+                "Não é possível registrar offline. Verifique sua conexão."
+            );
+        }
+
+        const user = await this.remoteRepository.register(
+            username,
+            email,
+            password
+        );
+
+        // Cache the user locally
+        await this.localRepository.saveUser(user);
+
+        return user;
+    }
+
+    async logout(): Promise<void> {
+        if (networkService.isOnline()) {
+            await this.remoteRepository.logout();
+        }
+
+        // Clear local user cache
+        await this.localRepository.clearAll();
+    }
+
+    async findById(id: string): Promise<User | null> {
+        if (networkService.isOnline()) {
+            try {
+                const user = await this.remoteRepository.findById(id);
+                if (user) {
+                    await this.localRepository.saveUser(user);
+                }
+                return user;
+            } catch {
+                // Fall back to local cache
+                return this.localRepository.findById(id);
+            }
+        }
+
+        // Offline: return cached user
+        return this.localRepository.findById(id);
+    }
+
+    async update(user: User): Promise<void> {
+        // Always update local cache
+        await this.localRepository.updateUser(user);
+
+        if (networkService.isOnline()) {
+            try {
+                await this.remoteRepository.update(user);
+            } catch {
+                // Queue for later sync
+                await syncService.addToQueue({
+                    entityType: "user",
+                    entityId: user.id,
+                    operation: "update",
+                    data: {
+                        id: user.id,
+                        name: user.name,
+                        email: user.email.value,
+                        latitude: user.location?.latitude,
+                        longitude: user.location?.longitude,
+                    },
+                });
+            }
+        } else {
+            // Queue for later sync
+            await syncService.addToQueue({
+                entityType: "user",
+                entityId: user.id,
+                operation: "update",
+                data: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email.value,
+                    latitude: user.location?.latitude,
+                    longitude: user.location?.longitude,
+                },
+            });
+        }
+    }
+}

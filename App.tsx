@@ -4,10 +4,13 @@ import { HostNavigation } from "./src/presentation/navigation/HostNavigation";
 import * as Updates from "expo-updates";
 import Constants from "expo-constants";
 import { ActivityIndicator, Text, View, Button } from "react-native";
+import { initializeDatabase } from "./src/infrastructure/database";
+import { syncService } from "./src/infrastructure/services/SyncService";
 
 export default function App() {
     const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
     const [isChecking, setIsChecking] = useState(false);
+    const [isDatabaseReady, setIsDatabaseReady] = useState(false);
 
     const version =
         Constants.manifest2?.extra?.expoClient?.version ??
@@ -39,9 +42,24 @@ export default function App() {
 
     useEffect(() => {
         Updates.checkForUpdateAsync();
+
+        // Initialize database and sync service
+        const initializeApp = async () => {
+            try {
+                await initializeDatabase();
+                await syncService.initialize();
+                setIsDatabaseReady(true);
+            } catch (error) {
+                console.error("Erro ao inicializar banco de dados:", error);
+                // Still set ready to allow app to function
+                setIsDatabaseReady(true);
+            }
+        };
+
+        initializeApp();
     }, []);
 
-    if (isChecking || isUpdateAvailable) {
+    if (!isDatabaseReady || isChecking || isUpdateAvailable) {
         return (
             <View
                 style={{
