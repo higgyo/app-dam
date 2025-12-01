@@ -2,7 +2,6 @@ import Room from "../../../domain/entities/Room";
 import { IRoomRepository } from "../../../domain/interfaces/iroom-repository";
 import Password from "../../../domain/value-objects/Password";
 import { networkService } from "../../services/NetworkService";
-import { syncService } from "../../services/SyncService";
 import { SqliteRoomRepository } from "../sqlite/SqliteRoomRepository";
 
 export class CachedRoomRepository implements IRoomRepository {
@@ -60,8 +59,12 @@ export class CachedRoomRepository implements IRoomRepository {
                 }
 
                 return rooms;
-            } catch {
-                // Fall back to local cache
+            } catch (error) {
+                // Fall back to local cache on any error (network failure, server error, etc.)
+                console.warn(
+                    "Failed to fetch rooms from server, using cache:",
+                    error
+                );
                 return this.localRepository.getAllRooms();
             }
         }

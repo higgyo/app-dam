@@ -10,12 +10,17 @@ export type NetworkStatusListener = (status: NetworkStatus) => void;
 class NetworkService {
     private listeners: NetworkStatusListener[] = [];
     private currentStatus: NetworkStatus = {
-        isConnected: true,
-        isInternetReachable: true,
+        isConnected: false, // Start with offline assumption for safety
+        isInternetReachable: null,
     };
     private unsubscribe: (() => void) | null = null;
+    private initialized = false;
 
     async initialize(): Promise<void> {
+        if (this.initialized) {
+            return;
+        }
+
         // Get initial state
         const state = await NetInfo.fetch();
         this.updateStatus(state);
@@ -24,6 +29,8 @@ class NetworkService {
         this.unsubscribe = NetInfo.addEventListener((state) => {
             this.updateStatus(state);
         });
+
+        this.initialized = true;
     }
 
     private updateStatus(state: NetInfoState): void {
@@ -43,10 +50,18 @@ class NetworkService {
     }
 
     isOnline(): boolean {
+        // If not initialized, assume offline to prevent network errors
+        if (!this.initialized) {
+            return false;
+        }
         return (
             this.currentStatus.isConnected &&
             this.currentStatus.isInternetReachable !== false
         );
+    }
+
+    isInitialized(): boolean {
+        return this.initialized;
     }
 
     addListener(listener: NetworkStatusListener): () => void {
@@ -67,6 +82,7 @@ class NetworkService {
             this.unsubscribe = null;
         }
         this.listeners = [];
+        this.initialized = false;
     }
 }
 

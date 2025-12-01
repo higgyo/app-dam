@@ -64,8 +64,12 @@ export class CachedUserRepository implements IUserRepository {
                 // Cache the user locally
                 await this.localRepository.saveUser(user);
                 return user;
-            } catch {
+            } catch (error) {
                 // If online verification fails, try local cache
+                console.warn(
+                    "Failed to verify authentication online, using cache:",
+                    error
+                );
                 const cachedUsers = await this.localRepository.getAllUsers();
                 if (cachedUsers.length > 0) {
                     return cachedUsers[0];
@@ -126,8 +130,12 @@ export class CachedUserRepository implements IUserRepository {
                     await this.localRepository.saveUser(user);
                 }
                 return user;
-            } catch {
-                // Fall back to local cache
+            } catch (error) {
+                // Fall back to local cache on any error
+                console.warn(
+                    "Failed to find user online, using cache:",
+                    error
+                );
                 return this.localRepository.findById(id);
             }
         }

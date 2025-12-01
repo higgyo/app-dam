@@ -149,8 +149,12 @@ export class CachedMessageRepository implements IMessageRepository {
                 await this.localRepository.saveMessages(messages);
 
                 return messages;
-            } catch {
-                // Fall back to local cache
+            } catch (error) {
+                // Fall back to local cache on any error (network failure, server error, etc.)
+                console.warn(
+                    "Failed to fetch messages from server, using cache:",
+                    error
+                );
                 return this.localRepository.getMessagesByRoom(roomId);
             }
         }

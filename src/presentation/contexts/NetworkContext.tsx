@@ -19,14 +19,17 @@ const NetworkContext = createContext<NetworkContextType | null>(null);
 
 export function NetworkContextProvider({ children }: { children: ReactNode }) {
     const [status, setStatus] = useState<NetworkStatus>({
-        isConnected: true,
-        isInternetReachable: true,
+        isConnected: false,
+        isInternetReachable: null,
     });
 
     useEffect(() => {
-        // Initialize network service and get initial status
+        // Get current status (network service should already be initialized in App.tsx)
         const initialize = async () => {
-            await networkService.initialize();
+            // Ensure network service is initialized (no-op if already done)
+            if (!networkService.isInitialized()) {
+                await networkService.initialize();
+            }
             setStatus(networkService.getStatus());
         };
 

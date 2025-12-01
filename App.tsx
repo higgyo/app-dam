@@ -6,6 +6,7 @@ import Constants from "expo-constants";
 import { ActivityIndicator, Text, View, Button } from "react-native";
 import { initializeDatabase } from "./src/infrastructure/database";
 import { syncService } from "./src/infrastructure/services/SyncService";
+import { networkService } from "./src/infrastructure/services/NetworkService";
 
 export default function App() {
     const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
@@ -43,9 +44,11 @@ export default function App() {
     useEffect(() => {
         Updates.checkForUpdateAsync();
 
-        // Initialize database and sync service
+        // Initialize services in order: network first, then database, then sync
         const initializeApp = async () => {
             try {
+                // Initialize network service first so offline detection works
+                await networkService.initialize();
                 await initializeDatabase();
                 await syncService.initialize();
                 setIsDatabaseReady(true);
