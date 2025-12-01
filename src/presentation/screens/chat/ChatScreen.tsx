@@ -24,6 +24,7 @@ import { MessageServiceFactory } from "../../../infrastructure/factories/Message
 import Message from "../../../domain/entities/Message";
 import { ChatCamera } from "../chat_camera/ChatCamera";
 import { supabase } from "../../../infrastructure/supabase";
+import MapScreen from "../maps/MapScreen";
 
 type ChatScreenRouteProp = RouteProp<
     { Chat: { roomId: string; roomName: string } },
@@ -41,12 +42,13 @@ const ChatScreen = () => {
     const scrollViewRef = useRef<ScrollView>(null);
     const insets = useSafeAreaInsets();
 
-    const [message, setMessage] = useState("");
+    const [message, setMessage] = useState<string>("");
     const [messages, setMessages] = useState<Message[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [sending, setSending] = useState(false);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [sending, setSending] = useState<boolean>(false);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
-    const [showCamera, setShowCamera] = useState(false);
+    const [showCamera, setShowCamera] = useState<boolean>(false);
+    const [showMap, setShowMap] = useState<boolean>(false);
     const [fullscreenMedia, setFullscreenMedia] = useState<{
         uri: string;
         type: "image" | "video";
@@ -389,6 +391,15 @@ const ChatScreen = () => {
         );
     }
 
+    if(showMap) {
+        return (
+            <MapScreen 
+                roomId={roomId}
+                setShowMap={setShowMap}
+            />
+        )
+    }
+
     if (loading) {
         return (
             <View style={[styles.container, styles.centerContent]}>
@@ -505,6 +516,15 @@ const ChatScreen = () => {
                     onPress={() => setShowCamera(true)}
                 >
                     <FontAwesome name="camera" size={24} color="#007AFF" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.plusButton}
+                    onPress={() => {
+                        setShowMap(true);
+                    }}
+                >
+                    <FontAwesome name="map" size={24} color="#007AFF" />
                 </TouchableOpacity>
 
                 <View style={styles.inputWrapper}>

@@ -1,11 +1,17 @@
 import { StyleSheet, View, Text } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthContext } from '../../contexts/AuthContext';
+import { supabase } from '../../../infrastructure/supabase';
 
-export default function MapScreen() {
+interface MapScreenProps {
+    roomId: string;
+    setShowMap: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export default function MapScreen({ roomId }:MapScreenProps) {
     const [error, setError] = useState<string | null>(null);
     const [region, setRegion] = useState<{
         latitude: number;
@@ -25,9 +31,42 @@ export default function MapScreen() {
                 longitude: auth.currentUser.location.longitude,
                 latitudeDelta: 0.05,
                 longitudeDelta: 0.05
-            })
+            });
         }, [])
     );
+
+    useEffect(() => {
+        const fetchData = async () => {
+            let { data: roomMembersData, error: roomMembersError } = await supabase
+                .from("room_members")
+                .select("user_id")
+                .eq("room_id", roomId);
+
+            if (roomMembersError) {
+                console.error(roomMembersError);
+                return;
+            }
+
+            let users:string[] = [];
+            roomMembersData?.forEach((item) => {
+                users.push(item.user_id);
+            });
+
+            let { data: profilesData, error: profilesError } = await supabase
+                .from("profiles")
+                .select("name, last_longitude, last_latitude, location_updated_at")
+                .in("user_id", users);
+
+            if (profilesError) {
+                console.error(profilesError);
+                return;
+            }
+
+            console.log(profilesData);
+        }
+
+        fetchData();
+    }, [roomId]);
 
     return (
         <View style={styles.container}>

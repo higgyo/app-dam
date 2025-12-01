@@ -14,7 +14,6 @@ import { FindUserUseCase } from "../../application/use-cases/FindUserUseCase";
 import { UserRepository } from "../../infrastructure/repositories/user-repository";
 import { AxiosHttpClient } from "../../infrastructure/http/axios-http-client";
 import { LogoutUser } from "../../application/use-cases/LogoutUserUseCase";
-import { supabase } from "../../infrastructure/supabase";
 import { VerifyAuthenticationUseCase } from "../../application/use-cases/VerifyAuthenticationUseCase";
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -25,7 +24,6 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
 
     const httpClient = new AxiosHttpClient();
 
-    // Inicializar repositório e use cases
     const userRepository = new UserRepository(httpClient);
     const registerUseCase = new RegisterUserUseCase(userRepository);
     const loginUseCase = new LoginUser(userRepository);
