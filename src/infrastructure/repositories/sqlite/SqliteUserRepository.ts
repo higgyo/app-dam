@@ -86,13 +86,16 @@ export class SqliteUserRepository {
     }
 
     private mapRowToUser(row: UserRow): User {
-        // Note: We don't store passwords locally for security reasons
-        // Using a placeholder password that won't be used for authentication
+        // Note: We don't store passwords locally for security reasons.
+        // The User.create method requires a password parameter due to the Password value object
+        // validation, but this cached user is only used for display purposes and read operations.
+        // Authentication always happens against the remote Supabase backend.
+        const placeholderPassword = `Cached_${row.id.substring(0, 8)}#1`;
         return User.create({
             id: row.id,
             name: row.name,
             email: row.email,
-            password: "CachedUser#123", // Placeholder, not used for auth
+            password: placeholderPassword,
             latitude: row.latitude ?? undefined,
             longitude: row.longitude ?? undefined,
         });

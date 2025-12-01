@@ -1,6 +1,7 @@
 import Message from "../../../domain/entities/Message";
 import { IMessageRepository } from "../../../domain/interfaces/imessage-repository";
 import { MessageType } from "../../../shared/types";
+import { SyncQueueRow } from "../../database/schema";
 import { networkService } from "../../services/NetworkService";
 import { syncService } from "../../services/SyncService";
 import { SqliteMessageRepository } from "../sqlite/SqliteMessageRepository";
@@ -10,7 +11,41 @@ export class CachedMessageRepository implements IMessageRepository {
     constructor(
         private readonly remoteRepository: IMessageRepository,
         private readonly localRepository: SqliteMessageRepository = new SqliteMessageRepository()
-    ) {}
+    ) {
+        // Register sync handler for messages
+        this.registerSyncHandler();
+    }
+
+    private registerSyncHandler(): void {
+        syncService.registerHandler("message", async (op: SyncQueueRow) => {
+            try {
+                const data = JSON.parse(op.data);
+                if (op.operation === "create") {
+                    // Send the message to the remote server
+                    const remoteMessage = await this.remoteRepository.sendMessage(
+                        data.content,
+                        data.roomId,
+                        data.senderId,
+                        data.type as MessageType
+                        // Note: mediaUri is not synced - see TODO in createLocalMessage
+                    );
+
+                    // Update local cache with the real server ID
+                    if (remoteMessage.id && remoteMessage.id !== op.entity_id) {
+                        // Delete the local placeholder and save with real ID
+                        await this.localRepository.deleteMessage(op.entity_id);
+                        await this.localRepository.saveMessage(remoteMessage);
+                    }
+
+                    return true;
+                }
+                // Other operations (update, delete) can be added here as needed
+                return true;
+            } catch {
+                return false;
+            }
+        });
+    }
 
     async sendMessage(
         content: string,
@@ -79,7 +114,14 @@ export class CachedMessageRepository implements IMessageRepository {
         // Save to local cache
         await this.localRepository.saveMessage(message);
 
-        // Queue for later sync (without media for now - media sync is complex)
+        // Queue for later sync
+        // TODO: Media file synchronization is not yet implemented.
+        // Currently, media files (images/videos) sent while offline will not be
+        // uploaded when connectivity returns. This is a known limitation that
+        // requires implementing:
+        // 1. Local file caching with expo-file-system
+        // 2. Background upload when online
+        // 3. URL replacement after successful upload
         await syncService.addToQueue({
             entityType: "message",
             entityId: localId,
@@ -90,7 +132,7 @@ export class CachedMessageRepository implements IMessageRepository {
                 senderId,
                 type,
                 createdAt,
-                // Note: mediaUri not included - media files need special handling
+                // mediaUri is intentionally excluded - see TODO above
             },
         });
 

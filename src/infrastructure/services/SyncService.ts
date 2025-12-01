@@ -9,9 +9,14 @@ export type SyncOperation = {
     data: Record<string, unknown>;
 };
 
+export type SyncHandler = (
+    operation: SyncQueueRow
+) => Promise<boolean>;
+
 class SyncService {
     private isSyncing = false;
     private unsubscribeNetwork: (() => void) | null = null;
+    private handlers: Map<string, SyncHandler> = new Map();
 
     async initialize(): Promise<void> {
         // Listen for network changes
@@ -25,6 +30,14 @@ class SyncService {
         if (networkService.isOnline()) {
             await this.syncPendingOperations();
         }
+    }
+
+    /**
+     * Register a handler for syncing a specific entity type.
+     * The handler should return true if sync was successful, false otherwise.
+     */
+    registerHandler(entityType: string, handler: SyncHandler): void {
+        this.handlers.set(entityType, handler);
     }
 
     async addToQueue(operation: SyncOperation): Promise<void> {
@@ -77,15 +90,29 @@ class SyncService {
             for (const op of pendingOps) {
                 if (op.retry_count >= 5) {
                     // Remove operations that have failed too many times
+                    // Note: In a production app, you might want to log these failures
+                    // or move them to a dead letter queue for manual review
                     await this.removeFromQueue(op.id);
                     continue;
                 }
 
                 try {
-                    // Execute the sync operation
-                    // The actual sync logic will be implemented by the cached repositories
-                    // For now, we just mark it as synced
-                    await this.removeFromQueue(op.id);
+                    const handler = this.handlers.get(op.entity_type);
+                    if (handler) {
+                        const success = await handler(op);
+                        if (success) {
+                            await this.removeFromQueue(op.id);
+                        } else {
+                            await this.incrementRetryCount(op.id);
+                        }
+                    } else {
+                        // No handler registered for this entity type
+                        // Log warning and remove to prevent queue buildup
+                        console.warn(
+                            `No sync handler registered for entity type: ${op.entity_type}`
+                        );
+                        await this.removeFromQueue(op.id);
+                    }
                 } catch {
                     await this.incrementRetryCount(op.id);
                 }
@@ -109,6 +136,7 @@ class SyncService {
             this.unsubscribeNetwork();
             this.unsubscribeNetwork = null;
         }
+        this.handlers.clear();
     }
 }
 

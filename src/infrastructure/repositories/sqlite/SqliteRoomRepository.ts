@@ -84,7 +84,6 @@ export class SqliteRoomRepository {
     }
 
     private mapRowToRoom(row: RoomRow): Room {
-        // Note: We don't store passwords locally for security reasons
         return Room.create({
             id: row.id,
             name: row.name,

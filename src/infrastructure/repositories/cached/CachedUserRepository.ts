@@ -2,6 +2,7 @@ import User from "../../../domain/entities/User";
 import { IUserRepository } from "../../../domain/interfaces/iuser-repository";
 import Email from "../../../domain/value-objects/Email";
 import Password from "../../../domain/value-objects/Password";
+import { SyncQueueRow } from "../../database/schema";
 import { networkService } from "../../services/NetworkService";
 import { syncService } from "../../services/SyncService";
 import { SqliteUserRepository } from "../sqlite/SqliteUserRepository";
@@ -10,7 +11,35 @@ export class CachedUserRepository implements IUserRepository {
     constructor(
         private readonly remoteRepository: IUserRepository,
         private readonly localRepository: SqliteUserRepository = new SqliteUserRepository()
-    ) {}
+    ) {
+        // Register sync handler for users
+        this.registerSyncHandler();
+    }
+
+    private registerSyncHandler(): void {
+        syncService.registerHandler("user", async (op: SyncQueueRow) => {
+            try {
+                const data = JSON.parse(op.data);
+                if (op.operation === "update") {
+                    // Create a user object for the update
+                    const user = User.create({
+                        id: data.id,
+                        name: data.name,
+                        email: data.email,
+                        password: "SyncPlaceholder#1", // Required by User.create but not used for sync
+                        latitude: data.latitude,
+                        longitude: data.longitude,
+                    });
+                    await this.remoteRepository.update(user);
+                    return true;
+                }
+                // Other operations can be added here as needed
+                return true;
+            } catch {
+                return false;
+            }
+        });
+    }
 
     async login(email: Email, password: Password): Promise<User> {
         // Login always requires online connection since it needs to authenticate with Supabase
