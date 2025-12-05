@@ -135,14 +135,6 @@ function ProtectedRoutes() {
                 }}
             />
 
-            <Drawer.Screen 
-                name="Map"
-                component={MapScreen}
-                options={{
-                    title: "Mapa"
-                }}
-            />
-
             <Drawer.Screen
                 name="Logout"
                 component={LogoutScreen}

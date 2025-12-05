@@ -2,17 +2,24 @@ import { StyleSheet, View, Text } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { useState, useCallback, useEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { supabase } from '../../../infrastructure/supabase';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 interface MapScreenProps {
     roomId: string;
     setShowMap: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export default function MapScreen({ roomId }:MapScreenProps) {
-    const [error, setError] = useState<string | null>(null);
+interface UserLocationInfo {
+    last_latitude: number;
+    last_longitude: number;
+    location_updated_at: string;
+    name: string;
+}
+
+export default function MapScreen({ roomId }: MapScreenProps) {
+    const [profiles, setProfiles] = useState<UserLocationInfo[]>([]);
     const [region, setRegion] = useState<{
         latitude: number;
         longitude: number;
@@ -22,9 +29,21 @@ export default function MapScreen({ roomId }:MapScreenProps) {
 
     const auth = useAuthContext();
 
+    const formatDate = (date: string | null) => {
+        if (!date)
+            return ""
+
+        let dateSplit = date.split("T")
+        let datePart = dateSplit[0]
+        let hourPart = dateSplit[1]
+
+        let datePartSplit = datePart.split("-")
+        return datePartSplit[2] + "/" + datePartSplit[1] + "/" + datePartSplit[0] + " " + hourPart
+    }
+
     useFocusEffect(
         useCallback(() => {
-            if(!auth.currentUser || !auth.currentUser.location) return;
+            if (!auth.currentUser || !auth.currentUser.location) return;
 
             setRegion({
                 latitude: auth.currentUser.location.latitude,
@@ -47,7 +66,7 @@ export default function MapScreen({ roomId }:MapScreenProps) {
                 return;
             }
 
-            let users:string[] = [];
+            let users: string[] = [];
             roomMembersData?.forEach((item) => {
                 users.push(item.user_id);
             });
@@ -63,6 +82,8 @@ export default function MapScreen({ roomId }:MapScreenProps) {
             }
 
             console.log(profilesData);
+
+            setProfiles(profilesData);
         }
 
         fetchData();
@@ -72,23 +93,24 @@ export default function MapScreen({ roomId }:MapScreenProps) {
         <View style={styles.container}>
             {region && (
                 <MapView region={region} style={styles.map}>
-                    <Marker
-                        coordinate={{ latitude: region.latitude, longitude: region.longitude }}
-                        title={auth.currentUser?.name}
-                    >   
-                        <View>
-                            <Ionicons 
-                                color="#fff"
-                                name='person'
-                                size={32}
-                            />
-                            <Text style={{ color: "#fff" }}>Teste</Text>
-                        </View>
-                    </Marker>
+                    {profiles.map((profile, index) => (
+                        <Marker
+                            coordinate={{
+                                latitude: !profile.last_latitude ? -21.55 : profile.last_latitude,
+                                longitude: !profile.last_longitude ? -45.43 : profile.last_longitude
+                            }}
+                            style={{ alignItems: "center" }}
+                            key={index}
+                            description={formatDate(profile.location_updated_at)}
+                            title={profile.name}
+                        >
+                            <View>
+                                <MaterialIcons name="person-pin" size={32} color="red" />
+                            </View>
+                        </Marker>
+                    ))}
                 </MapView>
             )}
-
-            {error && <Text style={styles.error}>{error}</Text>}
         </View>
     );
 }
