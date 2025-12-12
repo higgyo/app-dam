@@ -12,6 +12,7 @@ import { UpdateUserUseCase } from "../../application/use-cases/UpdateUserUseCase
 import { DeleteUserUseCase } from "../../application/use-cases/DeleteUserUseCase";
 import { FindUserUseCase } from "../../application/use-cases/FindUserUseCase";
 import { UserRepository } from "../../infrastructure/repositories/user-repository";
+import { CachedUserRepository } from "../../infrastructure/cache/cached-user-repository";
 import { AxiosHttpClient } from "../../infrastructure/http/axios-http-client";
 import { LogoutUser } from "../../application/use-cases/LogoutUserUseCase";
 import { supabase } from "../../infrastructure/supabase";
@@ -25,8 +26,9 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
 
     const httpClient = new AxiosHttpClient();
 
-    // Inicializar repositório e use cases
-    const userRepository = new UserRepository(httpClient);
+    // Inicializar repositório remoto e com cache (local-first)
+    const remoteUserRepository = new UserRepository(httpClient);
+    const userRepository = new CachedUserRepository(remoteUserRepository);
     const registerUseCase = new RegisterUserUseCase(userRepository);
     const loginUseCase = new LoginUser(userRepository);
     const logoutUseCase = new LogoutUser(userRepository);

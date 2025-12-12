@@ -4,15 +4,28 @@ import { HostNavigation } from "./src/presentation/navigation/HostNavigation";
 import * as Updates from "expo-updates";
 import Constants from "expo-constants";
 import { ActivityIndicator, Text, View, Button } from "react-native";
+import { CacheServiceFactory } from "./src/infrastructure/factories/CacheServiceFactory";
 
 export default function App() {
     const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
     const [isChecking, setIsChecking] = useState(false);
+    const [isCacheReady, setIsCacheReady] = useState(false);
 
     const version =
         Constants.manifest2?.extra?.expoClient?.version ??
         Constants.expoConfig?.version ??
         "unknown";
+
+    async function initializeCache() {
+        try {
+            await CacheServiceFactory.initialize();
+            setIsCacheReady(true);
+        } catch (error) {
+            console.error("Erro ao inicializar cache:", error);
+            // Continuar mesmo se o cache falhar
+            setIsCacheReady(true);
+        }
+    }
 
     async function checkForUpdates() {
         try {
@@ -38,10 +51,11 @@ export default function App() {
     }
 
     useEffect(() => {
+        initializeCache();
         Updates.checkForUpdateAsync();
     }, []);
 
-    if (isChecking || isUpdateAvailable) {
+    if (!isCacheReady || isChecking || isUpdateAvailable) {
         return (
             <View
                 style={{
