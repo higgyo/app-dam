@@ -9,7 +9,8 @@ export default class User {
         readonly name: string,
         readonly email: Email,
         readonly password: Password,
-        readonly location?: GeoLocation
+        readonly location?: GeoLocation,
+        readonly avatar_url?: string
     ) {}
 
     static create(user: {
@@ -19,6 +20,7 @@ export default class User {
         latitude?: number;
         longitude?: number;
         id?: string;
+        avatar_url?: string
     }) {
         const finalId = user.id?.length ? user.id : Crypto.randomUUID();
 
@@ -28,7 +30,8 @@ export default class User {
                 user.name,
                 Email.create(user.email),
                 Password.create(user.password),
-                GeoLocation.create(user.latitude, user.longitude)
+                GeoLocation.create(user.latitude, user.longitude),
+                user.avatar_url
             );
         }
 
@@ -37,7 +40,8 @@ export default class User {
             user.name,
             Email.create(user.email),
             Password.create(user.password),
-            undefined
+            undefined,
+            user.avatar_url
         );
     }
 }

@@ -341,9 +341,9 @@ const ChatScreen = () => {
         const videoPlayer =
             fullscreenMedia.type === "video"
                 ? useVideoPlayer(fullscreenMedia.uri, (player) => {
-                      player.loop = false;
-                      player.play();
-                  })
+                    player.loop = false;
+                    player.play();
+                })
                 : null;
 
         return (
@@ -391,9 +391,9 @@ const ChatScreen = () => {
         );
     }
 
-    if(showMap) {
+    if (showMap) {
         return (
-            <MapScreen 
+            <MapScreen
                 roomId={roomId}
                 setShowMap={setShowMap}
             />
@@ -469,7 +469,7 @@ const ChatScreen = () => {
                                             style={[
                                                 styles.receivedBubble,
                                                 msg.type !== "text" &&
-                                                    styles.mediaBubble,
+                                                styles.mediaBubble,
                                             ]}
                                         >
                                             {renderMessageContent(msg, isSent)}
@@ -481,7 +481,7 @@ const ChatScreen = () => {
                                             style={[
                                                 styles.sentBubble,
                                                 msg.type !== "text" &&
-                                                    styles.mediaBubble,
+                                                styles.mediaBubble,
                                             ]}
                                         >
                                             {renderMessageContent(msg, isSent)}
@@ -546,7 +546,7 @@ const ChatScreen = () => {
                     style={[
                         styles.sendButton,
                         (sending || !message.trim()) &&
-                            styles.sendButtonDisabled,
+                        styles.sendButtonDisabled,
                     ]}
                     disabled={sending || !message.trim()}
                 >

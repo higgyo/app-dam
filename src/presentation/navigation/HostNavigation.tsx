@@ -13,7 +13,7 @@ import { EnterRoom } from "../screens/enterroom/EnterRoom";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { RootStackParamList } from "./types";
 import { LogoutScreen } from "../screens/logout/LogoutScreen";
-import MapScreen from "../screens/maps/MapScreen";
+import { ProfileScreen } from "../screens/profile/ProfileScreen";
 
 export function HostNavigation() {
     const auth = useAuthContext();
@@ -132,6 +132,17 @@ function ProtectedRoutes() {
                     drawerIcon: ({ color, size }) => (
                         <MaterialIcons name="login" size={size} color={color} />
                     ),
+                }}
+            />
+
+            <Drawer.Screen
+                name="Porfile"
+                component={ProfileScreen}
+                options={{
+                    title: "Perfil",
+                    drawerIcon: ({ color, size }) => (
+                        <MaterialIcons name="people-alt" size={size} color={color} />
+                    )
                 }}
             />
 

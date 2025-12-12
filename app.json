@@ -56,6 +56,12 @@
           "locationAlwaysAndWhenInUsePermission": "Permitir BóConecta para acessar sua localização."
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Precisamos acessar suas fotos para escolher uma imagem de perfil."
+        }
+      ],
       "expo-secure-store",
       "expo-font",
       "expo-background-task"

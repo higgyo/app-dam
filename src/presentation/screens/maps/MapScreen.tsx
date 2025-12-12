@@ -73,15 +73,13 @@ export default function MapScreen({ roomId }: MapScreenProps) {
 
             let { data: profilesData, error: profilesError } = await supabase
                 .from("profiles")
-                .select("name, last_longitude, last_latitude, location_updated_at")
+                .select("name, last_longitude, last_latitude, location_updated_at, avatar_url")
                 .in("user_id", users);
 
             if (profilesError) {
                 console.error(profilesError);
                 return;
             }
-
-            console.log(profilesData);
 
             setProfiles(profilesData);
         }
