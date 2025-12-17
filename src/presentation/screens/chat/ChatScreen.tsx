@@ -72,7 +72,13 @@ const ChatScreen = () => {
         const unsubscribe = messageRepository.subscribeToMessages(
             roomId,
             (newMessage) => {
-                setMessages((prev) => [...prev, newMessage]);
+                setMessages((prev) => {
+                    // Evitar duplicatas
+                    if (prev.some((m) => m.id === newMessage.id)) {
+                        return prev;
+                    }
+                    return [...prev, newMessage];
+                });
                 setTimeout(() => {
                     scrollViewRef.current?.scrollToEnd({ animated: true });
                 }, 100);
@@ -109,7 +115,7 @@ const ChatScreen = () => {
 
             for (const msg of messages) {
                 if (!msg.fileUrl) continue;
-                if (signedUrls[msg.id]) continue;
+                if (signedUrls[msg.id!]) continue;
 
                 let path = msg.fileUrl;
 
@@ -136,7 +142,7 @@ const ChatScreen = () => {
                     .createSignedUrl(path, 60 * 60);
 
                 if (!error && data?.signedUrl) {
-                    updates[msg.id] = data.signedUrl;
+                    updates[msg.id!] = data.signedUrl;
                 } else {
                     console.log("Erro ao gerar signed URL:", path, error);
                 }
@@ -172,13 +178,25 @@ const ChatScreen = () => {
 
         try {
             setSending(true);
-            await sendMessageUseCase.execute({
+            const sentMessage = await sendMessageUseCase.execute({
                 content: message.trim(),
                 roomId: roomId,
                 senderId: currentUser.id!,
                 type: "text",
             });
             setMessage("");
+
+            // Adicionar mensagem ao estado local imediatamente (importante para modo offline)
+            setMessages((prev) => {
+                // Evitar duplicatas (a subscription pode também adicionar a mensagem)
+                if (prev.some((m) => m.id === sentMessage.id)) {
+                    return prev;
+                }
+                return [...prev, sentMessage];
+            });
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
         } catch (error: any) {
             Alert.alert("Erro", error.message || "Falha ao enviar mensagem");
         } finally {
@@ -193,13 +211,24 @@ const ChatScreen = () => {
 
         try {
             setSending(true);
-            await sendMessageUseCase.execute({
+            const sentMessage = await sendMessageUseCase.execute({
                 content: "",
                 roomId,
                 senderId: currentUser.id!,
                 mediaUri: uri,
                 type: "image",
             });
+
+            // Adicionar mensagem ao estado local imediatamente
+            setMessages((prev) => {
+                if (prev.some((m) => m.id === sentMessage.id)) {
+                    return prev;
+                }
+                return [...prev, sentMessage];
+            });
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
         } catch (error: any) {
             Alert.alert("Erro", error.message || "Falha ao enviar foto");
         } finally {
@@ -214,13 +243,24 @@ const ChatScreen = () => {
 
         try {
             setSending(true);
-            await sendMessageUseCase.execute({
+            const sentMessage = await sendMessageUseCase.execute({
                 content: "",
                 roomId,
                 senderId: currentUser.id!,
                 mediaUri: uri,
                 type: "video",
             });
+
+            // Adicionar mensagem ao estado local imediatamente
+            setMessages((prev) => {
+                if (prev.some((m) => m.id === sentMessage.id)) {
+                    return prev;
+                }
+                return [...prev, sentMessage];
+            });
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
         } catch (error: any) {
             Alert.alert("Erro", error.message || "Falha ao enviar vídeo");
         } finally {
@@ -237,7 +277,7 @@ const ChatScreen = () => {
     };
 
     const getMediaUri = (msg: Message) => {
-        if (signedUrls[msg.id]) return signedUrls[msg.id];
+        if (signedUrls[msg.id!]) return signedUrls[msg.id!];
         if (msg.fileUrl) return msg.fileUrl;
         return msg.content;
     };
