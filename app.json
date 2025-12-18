@@ -19,6 +19,11 @@
       }
     },
     "android": {
+      "config": {
+        "googleMaps": {
+          "apiKey": "process.env.GOOGLE_MAPS_API_KEY"
+        }
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -45,9 +50,22 @@
           "recordAudioAndroid": true
         }
       ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permitir BóConecta para acessar sua localização."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Precisamos acessar suas fotos para escolher uma imagem de perfil."
+        }
+      ],
       "expo-secure-store",
       "expo-font",
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-background-task"
     ],
     "extra": {
       "eas": {

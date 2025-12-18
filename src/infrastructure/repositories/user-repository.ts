@@ -22,7 +22,7 @@ export class UserRepository implements IUserRepository {
 
             const { data: profile, error: profileError } = await supabase
                 .from("profiles")
-                .select("name")
+                .select("name, last_latitude, last_longitude, location_updated_at, avatar_url")
                 .eq("user_id", userId)
                 .single();
 
@@ -31,11 +31,15 @@ export class UserRepository implements IUserRepository {
                     `Falha ao fazer login: ${profileError.message}`
                 );
 
+            console.log(profile)
+
             return User.create({
                 id: data.user.id,
                 name: profile.name,
                 email: email.value,
                 password: password.value,
+                latitude: profile.last_latitude ? profile.last_latitude : 0,
+                longitude: profile.last_longitude ? profile.last_longitude : 0
             });
         } catch (error) {
             throw error;
@@ -52,7 +56,7 @@ export class UserRepository implements IUserRepository {
 
             const { data: profile, error: profileError } = await supabase
                 .from("profiles")
-                .select("name")
+                .select("name, last_latitude, last_longitude, location_updated_at, avatar_url")
                 .eq("user_id", userId)
                 .single();
 
@@ -66,6 +70,9 @@ export class UserRepository implements IUserRepository {
                 name: profile.name,
                 email: data.user.email!,
                 password: "Senha#123",
+                latitude: profile.last_latitude ? profile.last_latitude : 0,
+                longitude: profile.last_longitude ? profile.last_longitude : 0,
+                avatar_url: profile.avatar_url ? profile.avatar_url : ""
             });
         } catch (error) {
             throw error;

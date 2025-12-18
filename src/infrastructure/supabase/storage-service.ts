@@ -9,9 +9,28 @@ export interface IStorageService {
     ): Promise<string>;
     deleteFile(bucket: string, path: string): Promise<void>;
     getPublicUrl(bucket: string, path: string): string;
+    updateLocation(longitude: number, latitude: number, userId: string): Promise<void>;
 }
 
 export class SupabaseStorageService implements IStorageService {
+    async updateLocation(longitude: number, latitude: number, userId: string) {
+        if (!userId) return;
+        
+        const { error } = await supabase
+            .from("profiles")
+            .update({ 
+                last_longitude: longitude, 
+                last_latitude: latitude,
+                location_updated_at: new Date().toUTCString()
+            })
+            .eq("user_id", userId);
+            
+        if (error) {
+            console.error("Erro ao atualizar localização no Supabase:", error);
+            throw error;
+        }
+    }
+    
     async uploadImage(
         mediaUri: string,
         bucket: string,

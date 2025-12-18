@@ -15,7 +15,6 @@ import { UserRepository } from "../../infrastructure/repositories/user-repositor
 import { CachedUserRepository } from "../../infrastructure/cache/cached-user-repository";
 import { AxiosHttpClient } from "../../infrastructure/http/axios-http-client";
 import { LogoutUser } from "../../application/use-cases/LogoutUserUseCase";
-import { supabase } from "../../infrastructure/supabase";
 import { VerifyAuthenticationUseCase } from "../../application/use-cases/VerifyAuthenticationUseCase";
 
 const AuthContext = createContext<AuthContextType | null>(null);

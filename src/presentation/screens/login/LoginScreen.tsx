@@ -36,7 +36,6 @@ export function LoginScreen() {
         try {
             setError("");
             await auth.login(email, password);
-            // Login bem-sucedido - navegação será tratada pelo HostNavigation
         } catch (err: any) {
             setError(err.message || "Erro ao fazer login");
         }
