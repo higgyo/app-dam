@@ -154,10 +154,29 @@ export function ProfileScreen() {
     };
 
     useEffect(() => {
-        if (auth.currentUser) {
+        const loadUserData = async () => {
+            if (!auth.currentUser) return;
+
             setName(auth.currentUser.name ?? "");
-            setImageUri(auth.currentUser.avatar_url ?? null);
-        }
+
+            if (!auth.currentUser.avatar_url) {
+                setImageUri(null);
+                return;
+            }
+
+            const { data, error } = await supabase.storage
+                .from("app-dam")
+                .createSignedUrl(auth.currentUser.avatar_url, 60 * 60);
+
+            if (error || !data) {
+                setImageUri(null);
+                return;
+            }
+
+            setImageUri(data.signedUrl);
+        };
+
+        loadUserData();
     }, [auth.currentUser]);
 
     return (
